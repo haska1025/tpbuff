@@ -1,0 +1,33 @@
+Source: tpbuff
+Priority: extra
+Maintainer: root <root@ubuntu>
+Build-Depends: cdbs, debhelper (>= 8.0.0), autotools-dev
+Standards-Version: 3.9.4
+Section: unknown
+
+Package: tpbuff
+Section: unknown
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
+
+Package: tpbuff-dbg
+Section: devel
+Architecture: any
+Depends: tpbuff (= ${Source-Version})
+Description: Debug symbol files for tpbuff
+ <insert long description, indented with spaces>
+
+#Package: tpbuff-doc
+#Section: document
+#Architecture: any
+#Description: Documentation for tpbuff
+# <insert long description, indented with spaces>
+
+#Package: tpbuff-dev
+#Section: devel
+#Architecture: any
+#Depends: tpbuff (= ${Source-Version})
+#Description: Develop package for tpbuff
+# <insert long description, indented with spaces>
