@@ -1,21 +1,38 @@
+#include <stdio.h>
 #include "tp_cxx_generator.h"
+#include "tp_symbol_list.h"
 
 static int tp_gen_cxx_getter_setter(FILE *out, struct item_node *n)
 {
-    for (struct item_node *in = n; in != NULL; in=in->next){
+    struct item_node *in = n;
+
+    fprintf(out, "\n  // getter/setter\n");
+    for (; in != NULL; in=in->next){
         if (in->val_type == VALUE_TYPE_INT16){
-            fprintf(out, "  int16_t %s(){return %s_;}\n", in->name);
-            fprintf(out, "  void %s(int16_t i){%s_=i;}\n", in->name);
+            fprintf(out, "  int16_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(int16_t i){%s_=i;}\n", in->name, in->name);
         }else if (in->val_type == VALUE_TYPE_INT32){
-            fprintf(out, "  int32_t %s(){return %s_;}\n", in->name);
-            fprintf(out, "  void %s(int32_t i){%s_=i;}\n", in->name);
+            fprintf(out, "  int32_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(int32_t i){%s_=i;}\n", in->name, in->name);
         }
     }
+
+    return 0;
 }
 static int tp_gen_cxx_data_member(FILE *out, struct item_node *n)
 {
+    fprintf(out, "\nprivate:\n");
+
+    struct item_node *in = n;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_INT16){
+            fprintf(out, "  int16_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT32){
+            fprintf(out, "  int32_t %s_;\n", in->name);
+        }
+    }
 }
-static int tp_gen_cxx_proto(FILE *out, struct protocol *p)
+static int tp_gen_cxx_proto_decl(FILE *out, struct protocol *p)
 {
     //Generate class header
     fprintf(out, "class %s : public Command {\npublic:\n ", p->name);
@@ -24,11 +41,11 @@ static int tp_gen_cxx_proto(FILE *out, struct protocol *p)
     fprintf(out, "  // destructor\n");
     fprintf(out, "  ~%s();\n", p->name);
     fprintf(out, "  // Convert object to bytes stream\n");
-    fprintf(out, "  virtual bool Serialize(OutputArchive *archive);\n");
+    fprintf(out, "  virtual bool Serialize(OutputArchive *oa);\n");
     fprintf(out, "  // Convert bytes stream to object\n");
-    fprintf(out, "  virtual bool Deserialize(InputArchive *archive);\n");
+    fprintf(out, "  virtual bool Deserialize(InputArchive *ia);\n");
     fprintf(out, "  // Return the size of the object\n");
-    fprintf(out, "  int ByteSize();\n");
+    fprintf(out, "  virtual int ByteSize();\n");
     tp_gen_cxx_getter_setter(out, p->head);
     tp_gen_cxx_data_member(out, p->head);
     fprintf(out, "};\n\n");
@@ -36,8 +53,59 @@ static int tp_gen_cxx_proto(FILE *out, struct protocol *p)
     return 0;
 }
 
+static int tp_gen_cxx_proto_impl(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+    // Generate constructor
+    fprintf(out, "%s::%s()\n{\n", p->name, p->name);
+    in = p->head;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_INT16
+                || in->val_type == VALUE_TYPE_INT32){
+            fprintf(out, "  %s_ = 0;\n", in->name); 
+        }
+    }
+    fprintf(out, "}\n");
+
+    // Generate destructor
+    fprintf(out, "%s::~%s()\n{\n", p->name, p->name);
+    // delete object type
+    fprintf(out, "}\n");
+
+    // Generate serialize
+    fprintf(out, "%s::Serialize(OutputArchive *oa)\n{\n", p->name);
+    in = p->head;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_INT16){
+            fprintf(out, "  oa->writeShort(%s_);\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_INT32){
+            fprintf(out, "  oa->writeInt(%s_);\n", in->name);
+        }
+    }
+    fprintf(out, "}\n");
+    // Generate deserialize
+    fprintf(out, "%s::Deserialize(InputArchive *ia)\n{\n", p->name);
+    in = p->head;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_INT16){
+            fprintf(out, "  %s_ = ia->readShort();\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_INT32){
+            fprintf(out, "  %s_ = oa->readInt();\n", in->name);
+        }
+    }
+    fprintf(out, "}\n");
+
+    return 0;
+}
+
 static int tp_gen_cxx_inc_file(FILE *out)
 {
+    // Generate include files
+    fprintf(out, "\n#include <tpb_command.h>\n");
+
+    // Other dynamic include
+
+    return 0;
 }
 int tp_gen_cxx_byte();
 int tp_gen_cxx_int16();
@@ -54,18 +122,19 @@ int tp_gen_cxx_code(const char *file)
 {
     // Openfile
     FILE *hdrfile, *srcfile;
-    struct protocol *proto;
+    struct protocol *proto, *cur_p;
 
-    char hdrfilename[GEN_HDR_LEN]={0};
-    char srcfilename[GEN_SRC_LEN]={0};
+    char hdrfilename[FILENAME_MAX]={0};
+    char srcfilename[FILENAME_MAX]={0};
 
-    hdrfile = srcfile = protofile = NULL;
-    if ((proto=tpp_protocol_parse(file)) != 0){
+    hdrfile = srcfile = NULL;
+    cur_p = proto = NULL;
+    if (tpp_protocol_parse(file) != 0){
         fprintf(stderr, "Parse the protocol failed\n");
         return -1;
     }
-    snprintf(hdrfilename, MAX_NAME-1, "%s%s", file, ".tpp.h"); 
-    snprintf(srcfilename, MAX_NAME-1, "%s%s", file, ".tpp.cpp"); 
+    snprintf(hdrfilename, FILENAME_MAX-1, "%s%s", file, ".tpp.h"); 
+    snprintf(srcfilename, FILENAME_MAX-1, "%s%s", file, ".tpp.cpp"); 
     // Create file for name.tpp.h
     hdrfile = fopen(hdrfilename, "w+");
     if (!hdrfile){
@@ -80,21 +149,35 @@ int tp_gen_cxx_code(const char *file)
         return -1;
     }
     // Generate file header
-    fprintf(hdrfilename, "/// Generated by tpp compiler. Don't edit!\n");
-    fprintf(hdrfilename, "#ifndef _TPP_%s_TPP_H_\n#define _TPP_%s_TPP_H_\n", file, file);
-    fprintf(hdrfilename, "#ifdef __cplusplus\nextern " "C" "{\n #endif\n");
+    fprintf(hdrfile, "/// Generated by tpp compiler. Don't edit!\n");
+    fprintf(hdrfile, "#ifndef _TPP_%s_TPP_H_\n#define _TPP_%s_TPP_H_\n", file, file);
 
     // Generate include file
-    if (tp_gen_cxx_inc_file(hdrfilename) != 0){
+    if (tp_gen_cxx_inc_file(hdrfile) != 0){
         // Generate include file failed
+        fclose(hdrfile);
+        fclose(hdrfile);
         return -1;
     }
 
+    // Genereate the implementation
+    fprintf(srcfile, "/// Generated by tpp compiler. Don't edit!\n");
+    fprintf(srcfile, "#include \"%s\"\n", hdrfilename);
+
     // Generate Protocol
-    for (struct protocol *p = proto; p != NULL; p=p->next){
-        tp_gen_cxx_proto(hdrfilename, p);
+    proto = tpp_protocol_tab_get();
+    for (cur_p = proto; cur_p != NULL; cur_p = cur_p->next){
+        tp_gen_cxx_proto_decl(hdrfile, cur_p);
+        tp_gen_cxx_proto_impl(srcfile, cur_p);
     }
 
-    fprintf(hdrfilename, "#ifdef __cplusplus\n}\n #endif\n");
+    // over
+    fprintf(hdrfile, "#endif//_TPP_%s_TPP_H_\n\n", file);
+
+    fflush(hdrfile);
+    fclose(hdrfile);
+
+    fflush(srcfile);
+    fclose(srcfile);
 }
 

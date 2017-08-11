@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS =-I m4
 
-SUBDIRS = src
-DIST_SUBDIRS= src
+SUBDIRS = src test
+DIST_SUBDIRS= src test
 
 include doxygen.am
 MOSTLYCLEANFILES = $(DX_CLEANFILES)

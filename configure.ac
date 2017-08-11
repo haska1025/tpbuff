@@ -18,6 +18,31 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_HEADER_STDC
 
+# Checks for gnu bison.
+AC_PROG_YACC
+if test x"$YACC" != x"bison -y"; then
+    AC_MSG_ERROR([You must install the gnu bison and its version must be 2.6 or more])
+else
+    flex_ver=$($YACC -V | sed -n '1p' | cut -f 4 -d " ")
+    ver1=$(echo $flex_ver | cut -f 1 -d ".")
+    ver2=$(echo $flex_ver | cut -f 2 -d ".")
+    if test $ver1 -lt 2 || (test ver1 -eq 2 && test $ver2 -lt 6);then
+        AC_MSG_ERROR([The gnu bison version must be 2.6 or more])
+    fi
+fi
+#checks for gnu flex
+AC_PROG_LEX
+if test x"$LEX" != x"flex"; then
+    AC_MSG_ERROR([You must install the gnu flex and its version must be 2.5.35 or more])
+else 
+    flex_ver=$($LEX -V | cut -f 2 -d " ")
+    ver1=$(echo $flex_ver | cut -f 1 -d ".")
+    ver2=$(echo $flex_ver | cut -f 2 -d ".")
+    ver3=$(echo $flex_ver | cut -f 3 -d ".")
+    if test $ver1 -lt 2 || (test $ver1 -eq 2 && (test $ver2 -lt 5 || (test $ver2 -eq 5 && test $ver3 -lt 34)));then
+        AC_MSG_ERROR([The gnu flex version must be 2.5.34 or more])
+    fi
+fi
 dnl Checks for libraries.
 dnl AC_CHECK_LIB(LIBRARY, FUNCT, [ACT-IF-FOUND], [ACT-IF-NOT])
 dnl Check header
@@ -28,11 +53,11 @@ dnl
 dnl Checks for library functions.
 
 dnl tang check, keep it anyway, our prefix=/tang
-AC_PLATFORM_CHECK([tang])
+dnl AC_PLATFORM_CHECK([tang])
 dnl option --enable-log=n, LOGLEVEL definition
-AC_SET_DEFAULT_LOGLEVEL([6])
+dnl AC_SET_DEFAULT_LOGLEVEL([6])
 dnl option --enable-profile=gprofile/profile/no to enable program profile.
-AC_SET_DEFAULT_PROFILE([disable])
+dnl AC_SET_DEFAULT_PROFILE([disable])
 
 dnl Check module with PKG_CONFIG
 dnl PKG_CHECK_MODULES([DBUS], [dbus-1])
@@ -52,7 +77,9 @@ DX_INIT_DOXYGEN(tpbuff, doxygen.cfg)
 AC_CONFIG_HEADERS([config.h])
 dnl Final Output
 AC_OUTPUT([
-Makefile src/Makefile src/tpp/Makefile test/Makefile
-src/tpbuff.pc
+Makefile
+src/Makefile src/tpp/Makefile
+test/Makefile test/ut/Makefile test/ut/tpp/Makefile
+src/tpbuff/tpbuff.pc
 ])
 

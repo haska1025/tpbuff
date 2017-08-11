@@ -119,7 +119,7 @@ struct item_node * tpp_item_node_set_name(struct item_node *node , char *name)
     return node;
 }
 
-struct protocol * tpp_new_protocol(struct item_node *node)
+struct protocol * tpp_protocol_new(struct item_node *node)
 {
     struct protocol *prtc;
 
@@ -229,28 +229,29 @@ struct protocol * tpp_protocol_get(const char *protoname)
     return p;
 }
 
-int tpp_protocol_get_int16_value(struct protocol *p , const char *key , int *val)
+struct protocol * tpp_protocol_tab_get()
 {
-    /*
-    struct item_node *node;
+    return proto_tab_head;
+}
+void tpp_protocol_tab_destroy()
+{
+    struct item_node *h, *h1;
+    struct protocol *p, *p1;
 
-    if (!p)
-        return NULL;
-
-    node = p->head;
-    for (; node != NULL; node = node->next){
-        if (strcmp(node->name , key
+    p = proto_tab_head;
+    for (; p != NULL;){
+        h = p->head;
+        for (; h != NULL; ){
+            h1 = h; 
+            h = h->next;
+            free(h1);
+        }
+        p1 = p;
+        p = p->next;
+        free(p1);
     }
-    */
-    return 0;
-}
-int tpp_protocol_get_int32_value(struct protocol *p , const char *key , int *val)
-{
-    return 0;
-}
-int tpp_protocol_get_str_value(struct protocol *p , const char *key , char **val)
-{
-    return 0;
+    proto_tab_head = NULL;
+    proto_tab_tail = NULL;
 }
 
 struct inc_file * tpp_get_inc_file()

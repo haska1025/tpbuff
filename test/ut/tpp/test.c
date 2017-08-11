@@ -1,32 +1,24 @@
-#include "tp.h"
 #include <stdio.h>
 #include <string.h>
+#include "tp_symbol_list.h"
 
 int main()
 {
-    struct tang_cmd *cmd;
-    struct key_val *kv;
-
-    load_cmd_tab("../../cmd/cmd_tab.txt");
-
-    cmd = NULL;
-    const char *s = "join_conf:a='1',b='2',c='ddfdf';";
-    const char *s1 ="add:a='1',b='2';\021";
-    cmd = get_tang_cmd(s1 , 16 );
-    if (!cmd){
-        printf("get tang cmd failed!\n");
+    const char *file_name = "test.tpp";
+    if ( 0 != tpp_protocol_parse(file_name)){
+        fprintf(stderr, "Parse file failed(%s)\n", file_name);
         return -1;
     }
 
-    /*
-    printf("cmd name = %s\n",cmd->name);
+    tpp_display_protocol_table();
+    tpp_protocol_tab_destroy();
 
-    for (kv = cmd->kv_head; kv != NULL; kv = kv->next){
-         printf("key=%s,val=%s\n",kv->key , kv->val);
+    if (0 != tp_gen_cxx_code(file_name)){
+        fprintf(stderr, "Generate code failed(%s)\n", file_name);
+        return -1;
     }
 
-    */
-    free_tang_cmd(cmd);
+    tpp_display_protocol_table();
 
     return 0;
 }

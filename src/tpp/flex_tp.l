@@ -14,10 +14,9 @@
 "="             {tpplval.intval = 7;return yytext[0];}
 ","             {tpplval.intval = 8;return yytext[0];}
 
-"definition"    {return DEFINITION;}
-"protocal"      {return PROTOCAL;}
-"integer16"     {tpplval.intval = 2;return INTEGER16;}
-"integer32"     {tpplval.intval = 4;return INTEGER32;}
+"protocol"      {return PROTOCOL;}
+"int16"     {tpplval.intval = 2;return INTEGER16;}
+"int32"     {tpplval.intval = 4;return INTEGER32;}
 "octets"         {tpplval.intval = 1;return OCTETS;}
 "bits"           {tpplval.intval = 1;return BITS;}
 "varchar"       {tpplval.intval = 1;return STRING;}

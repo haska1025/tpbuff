@@ -1,5 +1,5 @@
-definition protocal CloseConf
+protocol CloseConf
 {
-        WebConfID integer32;
+    int32 WebConfID;
 };
 

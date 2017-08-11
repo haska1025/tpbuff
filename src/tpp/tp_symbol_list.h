@@ -56,10 +56,11 @@ extern struct protocol * tpp_item_list_add_node(struct protocol *p , struct item
 extern struct protocol * tpp_protocol_new(struct item_node *node);
 extern struct protocol * tpp_protocol_set_name(struct protocol *p , char *name);
 extern struct protocol * tpp_protocol_tab_get();
-extern struct protocol * tpp_protocol_get(const char *protoname)
+extern struct protocol * tpp_protocol_get(const char *protoname);
 extern void tpp_protocol_tab_add(struct protocol *p);
 extern int tpp_protocol_parse(const char *file_name);
 extern void tpp_display_protocol_table();
+extern void tpp_protocol_tab_destroy();
 
 extern struct inc_file * tpp_get_inc_file();
 #endif//_TP_SYMBOL_LIST_H_
