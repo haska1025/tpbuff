@@ -23,12 +23,12 @@ struct item_node
     }value;
 };
 
-struct protocal
+struct protocol
 {
     char *name;
     struct item_node *head;
     struct item_node *tail;
-    struct protocal *next;
+    struct protocol *next;
 };
 
 struct key_val
@@ -38,33 +38,29 @@ struct key_val
     char *val;
 };
 
-struct tang_cmd
+struct inc_file
 {
-    char *name;
-    struct key_val *kv_head;
+    struct inc_file *next;
+    char *file_name;
 };
 
-
-extern struct item_node * tang_new_int16_node(int val_len , short val);
-extern struct item_node * tang_new_int32_node(int val_len , int val);
-extern struct item_node * tang_new_str_node(int val_len , char * val);
+extern struct item_node * tpp_new_int16_node(int val_len , short val);
+extern struct item_node * tpp_new_int32_node(int val_len , int val);
+extern struct item_node * tpp_new_str_node(int val_len , char * val);
 //extern struct item_node * new_bytes_node(int val_len , char * val);
 //extern struct item_node * new_bits_node(int val_len , char *val);
 
-extern struct item_node * tang_item_node_set_name(struct item_node *node, char *name);
+extern struct item_node * tpp_item_node_set_name(struct item_node *node, char *name);
+extern struct protocol * tpp_item_list_add_node(struct protocol *p , struct item_node *node);
 
-extern struct protocal * tang_new_protocal(struct item_node *node);
-extern struct protocal * tang_protocal_set_name(struct protocal *p , char *name);
-extern struct protocal * tang_item_list_add_node(struct protocal *p , struct item_node *node);
-extern void tang_protocal_tab_add( struct protocal *p);
-extern void tang_display_protocal_table();
+extern struct protocol * tpp_protocol_new(struct item_node *node);
+extern struct protocol * tpp_protocol_set_name(struct protocol *p , char *name);
+extern struct protocol * tpp_protocol_tab_get();
+extern struct protocol * tpp_protocol_get(const char *protoname)
+extern void tpp_protocol_tab_add(struct protocol *p);
+extern int tpp_protocol_parse(const char *file_name);
+extern void tpp_display_protocol_table();
 
-extern struct key_val * tang_new_key_val(char *key , char *val);
-extern struct tang_cmd *tang_new_tang_cmd(struct key_val *kv);
-extern struct tang_cmd *tang_cmd_set_name(struct tang_cmd *cmd , char *name);
-extern struct tang_cmd *tang_cmd_add(struct tang_cmd *cmd , struct key_val *kv);
-extern void tang_cmd_save(struct tang_cmd *cmd);
-
-
+extern struct inc_file * tpp_get_inc_file();
 #endif//_TP_SYMBOL_LIST_H_
 

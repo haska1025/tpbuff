@@ -5,10 +5,13 @@
 
 #include <string.h>
 
-static struct protocal *proto_tab_head = NULL;
-static struct protocal *proto_tab_tail = NULL;
+static struct protocol *proto_tab_head = NULL;
+static struct protocol *proto_tab_tail = NULL;
 
-struct item_node * tang_new_int16_node(int val_len , short val)
+static struct inc_file *incfile_head = NULL;
+static struct inc_file *incfile_tail = NULL;
+
+struct item_node * tpp_new_int16_node(int val_len , short val)
 {
     struct item_node *node;
     node = malloc(sizeof(struct item_node));
@@ -23,7 +26,7 @@ struct item_node * tang_new_int16_node(int val_len , short val)
     return node;
 }
 
-struct item_node * tang_new_int32_node(int val_len , int val)
+struct item_node * tpp_new_int32_node(int val_len , int val)
 {
     struct item_node *node;
     node = malloc(sizeof(struct item_node));
@@ -38,7 +41,7 @@ struct item_node * tang_new_int32_node(int val_len , int val)
     return node;
 }
 
-struct item_node * tang_new_str_node(int val_len , char * val)
+struct item_node * tpp_new_str_node(int val_len , char * val)
 {
     struct item_node *node;
 
@@ -110,17 +113,17 @@ struct item_node * new_bits_node(int val_len , char *val)
     return node;
 }
 */
-struct item_node * tang_item_node_set_name(struct item_node *node , char *name)
+struct item_node * tpp_item_node_set_name(struct item_node *node , char *name)
 {
     node->name = name; 
     return node;
 }
 
-struct protocal * tang_new_protocal(struct item_node *node)
+struct protocol * tpp_new_protocol(struct item_node *node)
 {
-    struct protocal *prtc;
+    struct protocol *prtc;
 
-    prtc = malloc(sizeof(struct protocal));
+    prtc = malloc(sizeof(struct protocol));
     if(!prtc)
         return NULL;
 
@@ -131,20 +134,20 @@ struct protocal * tang_new_protocal(struct item_node *node)
     return prtc;
 }
 
-struct protocal * tang_protocal_set_name(struct protocal *p , char *name)
+struct protocol * tpp_protocol_set_name(struct protocol *p , char *name)
 {
     p->name = name;
     return p;
 }
 
-struct protocal * tang_item_list_add_node(struct protocal *p, struct item_node *node)
+struct protocol * tpp_item_list_add_node(struct protocol *p, struct item_node *node)
 {
     p->tail->next = node;
     p->tail = node;
 
     return p;
 }
-void tang_protocal_tab_add( struct protocal *p)
+void tpp_protocol_tab_add( struct protocol *p)
 {
     if (proto_tab_head == NULL){
         proto_tab_head = p;
@@ -155,10 +158,10 @@ void tang_protocal_tab_add( struct protocal *p)
     }
 }
 
-void tang_display_protocal_table()
+void tpp_display_protocol_table()
 {
     struct item_node *h;
-    struct protocal *p;
+    struct protocol *p;
 
     p = proto_tab_head;
     for (; p != NULL; p = p->next){
@@ -179,49 +182,6 @@ void tang_display_protocal_table()
     }
 }
 
-//the tang cmd
-static struct tang_cmd *s_cmd;
-
-struct key_val * tang_new_key_val(char *key , char *val)
-{
-    struct key_val *kv;
-
-    kv = malloc(sizeof(struct key_val));
-
-    kv->key = key;
-    kv->val = val;
-    kv->next = NULL;
-
-    return kv;
-}
-struct tang_cmd *tang_new_tang_cmd( struct key_val *kv)
-{
-
-    struct tang_cmd *tc;
-    tc = malloc(sizeof(struct tang_cmd));
-    tc->kv_head = kv;
-
-    return tc;
-}
-struct tang_cmd *tang_cmd_set_name(struct tang_cmd *cmd , char *name)
-{
-    cmd->name = name;
-    return cmd;
-}
-
-struct tang_cmd *tang_cmd_add(struct tang_cmd *cmd , struct key_val *kv)
-{
-    kv->next = cmd->kv_head;
-    cmd->kv_head = kv;
-
-    return cmd;
-}
-
-void tang_cmd_save(struct tang_cmd *cmd)
-{
-    s_cmd = cmd;
-}
-
 //provide the interface for the external call
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 YY_BUFFER_STATE tpp_scan_bytes(const char *str , int len);
@@ -231,7 +191,7 @@ void tpp_delete_buffer  (YY_BUFFER_STATE  new_buffer );
 extern FILE *tppin;
 int tppparse();
 
-int tang_load_cmd_tab(const char *file_name)
+int tpp_protocol_parse(const char *file_name)
 {
     tppin = fopen(file_name , "r");
     if(!tppin){
@@ -245,7 +205,7 @@ int tang_load_cmd_tab(const char *file_name)
         printf("parse failed!\n");
     }
 #ifdef DEBUG
-    tang_display_protocal_table();
+    tpp_display_protocol_table();
 #endif
 
     fclose(tppin);
@@ -253,23 +213,23 @@ int tang_load_cmd_tab(const char *file_name)
     return 0;
 }
 
-struct protocal * tang_get_protocal(struct tang_cmd *tc)
+struct protocol * tpp_protocol_get(const char *protoname)
 {
-    struct protocal *p;
+    struct protocol *p;
 
-    if (!tc)
+    if (!protoname)
         return NULL;
 
     p = proto_tab_head;
     for (; p != NULL; p = p->next){
-        if (strcmp(tc->name , p->name) == 0)
+        if (strcmp(protoname , p->name) == 0)
             return p;
     }
 
     return p;
 }
 
-int tang_protocal_get_int16_value(struct protocal *p , const char *key , int *val)
+int tpp_protocol_get_int16_value(struct protocol *p , const char *key , int *val)
 {
     /*
     struct item_node *node;
@@ -284,90 +244,17 @@ int tang_protocal_get_int16_value(struct protocal *p , const char *key , int *va
     */
     return 0;
 }
-int tang_protocal_get_int32_value(struct protocal *p , const char *key , int *val)
+int tpp_protocol_get_int32_value(struct protocol *p , const char *key , int *val)
 {
     return 0;
 }
-int tang_protocal_get_str_value(struct protocal *p , const char *key , char **val)
+int tpp_protocol_get_str_value(struct protocol *p , const char *key , char **val)
 {
     return 0;
 }
 
-char * tang_cmd_get_value(struct tang_cmd *tc , const char *key)
+struct inc_file * tpp_get_inc_file()
 {
-    struct key_val *kv;
-
-    if (!tc)
-        return NULL;
-
-    kv = tc->kv_head;
-    for(; kv != NULL; kv = kv->next){
-        if (strcmp(kv->key, key) == 0)
-            return kv->val;
-    }
-
-    return NULL;
-}
-
-char * tang_cmd_get_name(struct tang_cmd *tc)
-{
-    return tc->name;
-}
-
-struct tang_cmd * get_tang_cmd(const char *cmdstr , int len)
-{
-    struct tang_cmd *cmd;
-    struct key_val *kv;
-    YY_BUFFER_STATE bp;
-
-    cmd = NULL;
-
-    printf("enter get_tang_cmd\n");
-
-    bp = tpp_scan_bytes(cmdstr , len);
-    tpp_switch_to_buffer(bp);
-
-    if(!tppparse()){
-        printf("parse work!\n");
-        cmd = s_cmd;
-    }else{
-        printf("parse failed!\n");
-    }
-
-    tpp_delete_buffer(bp);
-
-#ifdef DEBUG
-    if (cmd != NULL){
-        printf("cmd name = %s\n",cmd->name);
-
-        for (kv = cmd->kv_head; kv != NULL; kv = kv->next){
-            printf("key=%s,val=%s\n",kv->key , kv->val);
-        }
-    }
-#endif
-
-    return cmd;
-}
-
-int free_tang_cmd(struct tang_cmd *cmd)
-{
-    if (!cmd)
-        return -1;
-
-    struct key_val *kv , *next_kv;
-
-    free(cmd->name);
-    
-    for(kv = cmd->kv_head; kv != NULL; kv = next_kv){
-        free(kv->key);
-        free(kv->val);
-        next_kv = kv->next;
-        free(kv);
-    }
-
-    free(cmd);
-    s_cmd = NULL;
-
-    return 0;
+    return incfile_head;
 }
 
