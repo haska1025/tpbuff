@@ -64,15 +64,15 @@ dnl PKG_CHECK_MODULES([DBUS], [dbus-1])
 
 
 dnl Doxygen check and configure
-DX_HTML_FEATURE(ON)
-DX_CHM_FEATURE(OFF)
-DX_CHI_FEATURE(OFF)
-DX_MAN_FEATURE(OFF)
-DX_RTF_FEATURE(OFF)
-DX_XML_FEATURE(OFF)
-DX_PDF_FEATURE(OFF)
-DX_PS_FEATURE(OFF)
-DX_INIT_DOXYGEN(tpbuff, doxygen.cfg)
+dnl DX_HTML_FEATURE(ON)
+dnl DX_CHM_FEATURE(OFF)
+dnl DX_CHI_FEATURE(OFF)
+dnl DX_MAN_FEATURE(OFF)
+dnl DX_RTF_FEATURE(OFF)
+dnl DX_XML_FEATURE(OFF)
+dnl DX_PDF_FEATURE(OFF)
+dnl DX_PS_FEATURE(OFF)
+dnl DX_INIT_DOXYGEN(tpbuff, doxygen.cfg)
 
 AC_CONFIG_HEADERS([config.h])
 dnl Final Output
@@ -80,6 +80,5 @@ AC_OUTPUT([
 Makefile
 src/Makefile src/tpp/Makefile
 test/Makefile test/ut/Makefile test/ut/tpp/Makefile
-src/tpbuff/tpbuff.pc
 ])
 

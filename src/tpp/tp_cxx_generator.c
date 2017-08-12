@@ -8,12 +8,54 @@ static int tp_gen_cxx_getter_setter(FILE *out, struct item_node *n)
 
     fprintf(out, "\n  // getter/setter\n");
     for (; in != NULL; in=in->next){
-        if (in->val_type == VALUE_TYPE_INT16){
+        if (in->val_type == VALUE_TYPE_BYTE){
+            fprintf(out, "  uint8_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(uint8_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_INT8){
+            fprintf(out, "  int8_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(int8_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT8){
+            fprintf(out, "  uint8_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(uint8_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_INT16){
             fprintf(out, "  int16_t %s(){return %s_;}\n", in->name, in->name);
             fprintf(out, "  void %s(int16_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT16){
+            fprintf(out, "  uint16_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(uint16_t i){%s_=i;}\n", in->name, in->name);
         }else if (in->val_type == VALUE_TYPE_INT32){
             fprintf(out, "  int32_t %s(){return %s_;}\n", in->name, in->name);
             fprintf(out, "  void %s(int32_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT32){
+            fprintf(out, "  uint32_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(uint32_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_INT64){
+            fprintf(out, "  int64_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(int64_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT64){
+            fprintf(out, "  uint64_t %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(uint64_t i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_INT){
+            fprintf(out, "  int %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(int i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_LONG){
+            fprintf(out, "  long %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(long l){%s_=l;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_SHORT){
+            fprintf(out, "  short %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(short i){%s_=i;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_CHAR){
+            fprintf(out, "  char %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(char c){%s_=c;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_DOUBLE){
+            fprintf(out, "  double %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(double d){%s_=d;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_FLOAT){
+            fprintf(out, "  float %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(float f){%s_=f;}\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_STR){
+            fprintf(out, "  std::string %s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(std::string s){%s_=s;}\n", in->name, in->name);
         }
     }
 
@@ -25,10 +67,70 @@ static int tp_gen_cxx_data_member(FILE *out, struct item_node *n)
 
     struct item_node *in = n;
     for (; in != NULL; in=in->next){
-        if (in->val_type == VALUE_TYPE_INT16){
+        if (in->val_type == VALUE_TYPE_BYTE){
+            fprintf(out, "  uint8_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_BYTE_VEC){
+            fprintf(out, "  std::vector<uint8_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT8){
+            fprintf(out, "  int8_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT8_VEC){
+            fprintf(out, "  std::vector<int8_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT8){
+            fprintf(out, "  uint8_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT8_VEC){
+            fprintf(out, "  std::vector<uint8_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT16){
             fprintf(out, "  int16_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT16_VEC){
+            fprintf(out, "  std::vector<int16_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT16){
+            fprintf(out, "  uint16_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT16_VEC){
+            fprintf(out, "  std::vector<uint16_t> %s_vec_;\n", in->name);
         }else if (in->val_type == VALUE_TYPE_INT32){
             fprintf(out, "  int32_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT32_VEC){
+            fprintf(out, "  std::vector<int32_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT32){
+            fprintf(out, "  uint32_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT32_VEC){
+            fprintf(out, "  std::vector<uint32_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT64){
+            fprintf(out, "  int64_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT64_VEC){
+            fprintf(out, "  std::vector<int64_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT64){
+            fprintf(out, "  uint64_t %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_UINT64_VEC){
+            fprintf(out, "  std::vector<uint64_t> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_STR){
+            fprintf(out, "  std::string %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_STR_VEC){
+            fprintf(out, "  std::vector<std::string> %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT){
+            fprintf(out, "  int %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_INT_VEC){
+            fprintf(out, "  std::vector<int> %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_LONG){
+            fprintf(out, "  long %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_LONG_VEC){
+            fprintf(out, "  std::vector<long> %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_SHORT){
+            fprintf(out, "  short %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_SHORT_VEC){
+            fprintf(out, "  std::vector<short> %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_CHAR){
+            fprintf(out, "  char %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_CHAR_VEC){
+            fprintf(out, "  std::vector<char> %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_DOUBLE){
+            fprintf(out, "  double %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
+            fprintf(out, "  std::vector<double> %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_FLOAT){
+            fprintf(out, "  float %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
+            fprintf(out, "  std::vector<float> %s_;\n", in->name);
         }
     }
 }

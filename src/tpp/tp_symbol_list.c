@@ -11,108 +11,19 @@ static struct protocol *proto_tab_tail = NULL;
 static struct inc_file *incfile_head = NULL;
 static struct inc_file *incfile_tail = NULL;
 
-struct item_node * tpp_new_int16_node(int val_len , short val)
+struct item_node * tpp_new_node(int val_type)
 {
     struct item_node *node;
     node = malloc(sizeof(struct item_node));
     if(!node)
         return node;
 
-    node->val_type = VALUE_TYPE_INT16;
-    node->value.short_val = val;
-    node->val_len = val_len;
+    node->val_type = val_type;
     node->next = NULL;
 
     return node;
 }
 
-struct item_node * tpp_new_int32_node(int val_len , int val)
-{
-    struct item_node *node;
-    node = malloc(sizeof(struct item_node));
-    if(!node)
-        return node;
-
-    node->val_type = VALUE_TYPE_INT32;
-    node->value.int_val = val;
-    node->val_len = val_len;
-    node->next = NULL;
-
-    return node;
-}
-
-struct item_node * tpp_new_str_node(int val_len , char * val)
-{
-    struct item_node *node;
-
-    node = malloc(sizeof(struct item_node));
-    if(!node)
-        return node;
-
-    node->val_type = VALUE_TYPE_STR;
-    node->value.str_val = val;
-    node->val_len = val_len;
-    node->next = NULL;
-
-    return node;
-}
-/*
-struct item_node * new_bytes_node(int val_len , char * val)
-{
-    struct item_node *node;
-
-    int slen;
-    int i;
-    char *pval_start, *pval_end;
-
-    slen = strlen(val);
-    if (slen % 2 != 0)
-        return NULL;
-
-    node = malloc(sizeof(struct item_node));
-    if(!node)
-        return NULL;
-
-    node->value.octets = malloc(slen/2);
-
-    i = 0;
-    pval_end = val + slen;
-    pval_start = val; 
-    for (; pval_start < pval_end;){
-        char c;
-        int low , high;
-
-        c = *pval_start++;
-        high = naive_atoi(c);
-        c = *pval_start++;
-        low = naive_atoi(c);
-
-        node->value.octets[i++] = (high << 4) + low; 
-    }
-
-    node->val_type = VALUE_TYPE_OCTET;
-    node->val_len = val_len;
-    node->next = NULL;
-
-    return node;
-}
-
-struct item_node * new_bits_node(int val_len , char *val)
-{
-    int slen;
-    struct item_node *node;
-
-    node = malloc(sizeof(struct item_node));
-    if(!node)
-        return node;
-
-    slen = strlen(val);
-    node->val_type = VALUE_TYPE_BITS;
-    node->val_len = val_len;
-
-    return node;
-}
-*/
 struct item_node * tpp_item_node_set_name(struct item_node *node , char *name)
 {
     node->name = name; 
@@ -170,14 +81,8 @@ void tpp_display_protocol_table()
         h = p->head;
 
         for (; h != NULL; h = h->next){
-            if (h->val_type == VALUE_TYPE_INT16 ){
-                printf("\t%s,%d,%d,%d\n",h->name ,h->val_type, h->val_len , h->value.short_val);
-            }else if(h->val_type == VALUE_TYPE_INT32){
-                printf("\t%s,%d,%d,%d\n",h->name ,h->val_type, h->val_len , h->value.int_val);
-            }else if(h->val_type == VALUE_TYPE_STR){
-                printf("\t%s,%d,%d,%s\n",h->name ,h->val_type, h->val_len , h->value.str_val);
-            }
-        }
+            printf("\t%s,%d\n",h->name ,h->val_type);
+	}
         printf("}\n");
     }
 }
