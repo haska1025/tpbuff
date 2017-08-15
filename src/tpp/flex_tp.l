@@ -17,6 +17,7 @@
 "protocol"      {return PROTOCOL;}
 "repeat"    {return REPEAT;}
 
+"bool"     {tpplval.intval = 1;return BOOL;}
 "byte"     {tpplval.intval = 1;return BYTE;}
 "int8"     {tpplval.intval = 1;return INTEGER8;}
 "uint8"     {tpplval.intval = 1;return UINTEGER8;}

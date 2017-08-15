@@ -2,60 +2,95 @@
 #include "tp_cxx_generator.h"
 #include "tp_symbol_list.h"
 
+#define tp_gen_cxx_getter_setter_type(type) \
+    do {\
+        fprintf(out, "  " #type "%s(){return %s_;}\n", in->name, in->name);\
+        fprintf(out, "  void %s(" #type " i){%s_=i;}\n\n", in->name, in->name);\
+    }while(0);
+
+#define tp_gen_cxx_getter_setter_type_vec(type) \
+    do {\
+        fprintf(out, "  std::vector<" #type "> &%s_vec(){return %s_vec_;}\n", in->name, in->name);\
+        fprintf(out, "  void %s_vec(std::vector<" #type "> &i){%s_vec_=i;}\n", in->name, in->name);\
+        fprintf(out, "  void append_to_vec(" #type " i){%s_vec_.push_back(i);}\n\n", in->name);\
+    }while(0);
+
 static int tp_gen_cxx_getter_setter(FILE *out, struct item_node *n)
 {
     struct item_node *in = n;
 
     fprintf(out, "\n  // getter/setter\n");
     for (; in != NULL; in=in->next){
-        if (in->val_type == VALUE_TYPE_BYTE){
-            fprintf(out, "  uint8_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(uint8_t i){%s_=i;}\n", in->name, in->name);
+        if (in->val_type == VALUE_TYPE_BYTE || in->val_type == VALUE_TYPE_UINT8){
+            tp_gen_cxx_getter_setter_type(uint8_t);
+        }else if (in->val_type == VALUE_TYPE_BYTE_VEC ||in->val_type == VALUE_TYPE_UINT8_VEC){
+            tp_gen_cxx_getter_setter_type_vec(uint8_t);
         }else if (in->val_type == VALUE_TYPE_INT8){
-            fprintf(out, "  int8_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(int8_t i){%s_=i;}\n", in->name, in->name);
-        }else if (in->val_type == VALUE_TYPE_UINT8){
-            fprintf(out, "  uint8_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(uint8_t i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(int8_t);
+        }else if (in->val_type == VALUE_TYPE_INT8_VEC){
+            tp_gen_cxx_getter_setter_type_vec(int8_t);
         }else if (in->val_type == VALUE_TYPE_INT16){
-            fprintf(out, "  int16_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(int16_t i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(int16_t);
+        }else if (in->val_type == VALUE_TYPE_INT16_VEC){
+            tp_gen_cxx_getter_setter_type_vec(int16_t);
         }else if (in->val_type == VALUE_TYPE_UINT16){
-            fprintf(out, "  uint16_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(uint16_t i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(uint16_t);
+        }else if (in->val_type == VALUE_TYPE_UINT16_VEC){
+            tp_gen_cxx_getter_setter_type_vec(uint16_t);
         }else if (in->val_type == VALUE_TYPE_INT32){
-            fprintf(out, "  int32_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(int32_t i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(int32_t);
+        }else if (in->val_type == VALUE_TYPE_INT32_VEC){
+            tp_gen_cxx_getter_setter_type_vec(int32_t);
         }else if (in->val_type == VALUE_TYPE_UINT32){
-            fprintf(out, "  uint32_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(uint32_t i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(uint32_t);
+        }else if (in->val_type == VALUE_TYPE_UINT32_VEC){
+            tp_gen_cxx_getter_setter_type_vec(uint32_t);
         }else if (in->val_type == VALUE_TYPE_INT64){
-            fprintf(out, "  int64_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(int64_t i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(int64_t);
+        }else if (in->val_type == VALUE_TYPE_INT64_VEC){
+            tp_gen_cxx_getter_setter_type_vec(int64_t);
         }else if (in->val_type == VALUE_TYPE_UINT64){
-            fprintf(out, "  uint64_t %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(uint64_t i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type_vec(int64_t);
+        }else if (in->val_type == VALUE_TYPE_UINT64_VEC){
+            tp_gen_cxx_getter_setter_type_vec(uint64_t);
         }else if (in->val_type == VALUE_TYPE_INT){
-            fprintf(out, "  int %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(int i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(int);
+        }else if (in->val_type == VALUE_TYPE_INT_VEC){
+            tp_gen_cxx_getter_setter_type_vec(int);
         }else if (in->val_type == VALUE_TYPE_LONG){
-            fprintf(out, "  long %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(long l){%s_=l;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(long);
+        }else if (in->val_type == VALUE_TYPE_LONG_VEC){
+            tp_gen_cxx_getter_setter_type_vec(long);
         }else if (in->val_type == VALUE_TYPE_SHORT){
-            fprintf(out, "  short %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(short i){%s_=i;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(short);
+        }else if (in->val_type == VALUE_TYPE_SHORT_VEC){
+            tp_gen_cxx_getter_setter_type_vec(short);
         }else if (in->val_type == VALUE_TYPE_CHAR){
-            fprintf(out, "  char %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(char c){%s_=c;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(char);
+        }else if (in->val_type == VALUE_TYPE_CHAR_VEC){
+            tp_gen_cxx_getter_setter_type_vec(char);
         }else if (in->val_type == VALUE_TYPE_DOUBLE){
-            fprintf(out, "  double %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(double d){%s_=d;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(double);
+        }else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
+            tp_gen_cxx_getter_setter_type_vec(double);
         }else if (in->val_type == VALUE_TYPE_FLOAT){
-            fprintf(out, "  float %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(float f){%s_=f;}\n", in->name, in->name);
+            tp_gen_cxx_getter_setter_type(float);
+        }else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
+            tp_gen_cxx_getter_setter_type_vec(float);
         }else if (in->val_type == VALUE_TYPE_STR){
-            fprintf(out, "  std::string %s(){return %s_;}\n", in->name, in->name);
-            fprintf(out, "  void %s(std::string s){%s_=s;}\n", in->name, in->name);
+            fprintf(out, "  std::string &%s(){return %s_;}\n", in->name, in->name);
+            fprintf(out, "  void %s(std::string &s){%s_=s;}\n", in->name, in->name);
+            fprintf(out, "  void %s(const char *s){%s_ = s;}\n\n", in->name, in->name);
+        }else if (in->val_type == VALUE_TYPE_STR_VEC){
+            tp_gen_cxx_getter_setter_type_vec(std::string);
+        }else if (in->val_type == VALUE_TYPE_BOOL){
+            tp_gen_cxx_getter_setter_type(bool);
+        }else if (in->val_type == VALUE_TYPE_BOOL_VEC){
+            tp_gen_cxx_getter_setter_type_vec(bool);
+        }else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  %s *%s();\n",in->ref_type, in->name);
+            fprintf(out, "  %s *mutable_%s();\n",in->ref_type, in->name);
+            fprintf(out, "  void set_allocated_%s(%s *alloc_ptr);\n\n",in->name, in->ref_type);
         }
     }
 
@@ -196,11 +231,11 @@ static int tp_gen_cxx_proto_impl_ctor(FILE *out, struct protocol *p)
 
 #define tp_gen_cxx_proto_impl_deserialize_vec(type) \
     do{\
-        fprintf(out, "\n  // Write size firstly\n");\
-        fprintf(out, "  int %s_size = oa->readInt(tpb);\n", in->name);\
-        fprintf(out, "  // Write element iteratively\n");\
+        fprintf(out, "\n  // Read size firstly\n");\
+        fprintf(out, "  int %s_size = ia->readInt(tpb);\n", in->name);\
+        fprintf(out, "  // Read element iteratively\n");\
         fprintf(out, "  for(int i=0; i < %s_size; i++){\n", in->name);\
-        fprintf(out, "    %s_vec_[i] = oa->read" #type "(tpb);\n", in->name);\
+        fprintf(out, "    %s_vec_[i] = ia->read" #type "(tpb);\n", in->name);\
         fprintf(out, "  }\n\n");\
     } while(0);
 
@@ -276,6 +311,20 @@ static int tp_gen_cxx_proto_impl_serialize(FILE *out, struct protocol *p)
             fprintf(out, "  oa->writeFloat(tpb, %s_);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
             tp_gen_cxx_proto_impl_serialize_vec(Float);
+        } else if (in->val_type == VALUE_TYPE_BOOL){
+            fprintf(out, "  oa->writeInt8(tpb, %s_);\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
+            tp_gen_cxx_proto_impl_serialize_vec(Int8);
+        } else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  %s_->Serialize(oa);\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "\n  // Write size firstly\n");
+            fprintf(out, "  int %s_size = %s_vec_.size();\n", in->name, in->name);
+            fprintf(out, "  oa->writeInt(tpb, %s_size);\n", in->name);
+            fprintf(out, "  // Write element iteratively\n");
+            fprintf(out, "  for(int i=0; i < %s_size; i++){\n", in->name);
+            fprintf(out, "    %s_->Serialize(oa);\n", in->name);
+            fprintf(out, "  }\n\n");
         }
     }
     fprintf(out, "}\n");
@@ -292,65 +341,78 @@ static int tp_gen_cxx_proto_impl_deserialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_BYTE_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(UInt8);
         } else if (in->val_type == VALUE_TYPE_INT8){
-            fprintf(out, "  %s_ = oa->readInt8(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readInt8(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT8_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Int8);
         } else if (in->val_type == VALUE_TYPE_UINT8){
-            fprintf(out, "  %s_ = oa->readUInt8(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readUInt8(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_UINT8_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(UInt8);
         } else if (in->val_type == VALUE_TYPE_INT16){
-            fprintf(out, "  %s_ = oa->readInt16(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readInt16(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT16_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Int16);
         } else if (in->val_type == VALUE_TYPE_UINT16){
-            fprintf(out, "  %s_ = oa->readUInt16(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readUInt16(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_UINT16_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(UInt16);
         } else if (in->val_type == VALUE_TYPE_INT32){
-            fprintf(out, "  %s_ = oa->readInt32(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readInt32(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT32_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Int32);
         } else if (in->val_type == VALUE_TYPE_UINT32){
-            fprintf(out, "  %s_ = readUInt32(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readUInt32(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_UINT32_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(UInt32);
         } else if (in->val_type == VALUE_TYPE_INT64){
-            fprintf(out, "  %s_ = readInt64(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readInt64(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT64_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Int64);
         } else if (in->val_type == VALUE_TYPE_UINT64){
-            fprintf(out, "  %s_ = readUInt64(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readUInt64(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_UINT64_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(UInt64);
         } else if (in->val_type == VALUE_TYPE_INT){
-            fprintf(out, "  %s_ = readInt(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readInt(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Int);
         } else if (in->val_type == VALUE_TYPE_SHORT){
-            fprintf(out, "  %s_ = readShort(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readShort(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_SHORT_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Short);
         } else if (in->val_type == VALUE_TYPE_LONG){
-            fprintf(out, "  %s_ = readLong(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readLong(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_LONG_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Long);
         } else if (in->val_type == VALUE_TYPE_CHAR){
-            fprintf(out, "  %s_ = readChar(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readChar(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_CHAR_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Char);
         } else if (in->val_type == VALUE_TYPE_STR){
-            fprintf(out, "  %s_ = readStr(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readStr(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_STR_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Str);
         } else if (in->val_type == VALUE_TYPE_DOUBLE){
-            fprintf(out, "  %s_ = readDouble(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readDouble(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Double);
         } else if (in->val_type == VALUE_TYPE_FLOAT){
-            fprintf(out, "  %s_ = readFloat(tpb);\n", in->name);
+            fprintf(out, "  %s_ = ia->readFloat(tpb);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Float);
+        } else if (in->val_type == VALUE_TYPE_BOOL){
+            fprintf(out, "  %s_ = ia->readInt8(tpb);\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
+            tp_gen_cxx_proto_impl_deserialize_vec(Int8);
+        } else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  %s_->Deserialize(ia);\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "\n  // Read size firstly\n");
+            fprintf(out, "  int %s_size = ia->readInt(tpb);\n", in->name);
+            fprintf(out, "  // Read element iteratively\n");
+            fprintf(out, "  for(int i=0; i < %s_size; i++){\n", in->name);
+            fprintf(out, "    %s_vec_[i]->Deserialize(ia);\n", in->name);
+            fprintf(out, "  }\n\n");
         }
     }
     fprintf(out, "}\n");

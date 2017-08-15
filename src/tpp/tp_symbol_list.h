@@ -35,6 +35,10 @@ enum value_type{
     VALUE_TYPE_CHAR_VEC,//8714
     VALUE_TYPE_STR,//8715
     VALUE_TYPE_STR_VEC,//8716
+    VALUE_TYPE_REF,//8717
+    VALUE_TYPE_REF_VEC,//8718
+    VALUE_TYPE_BOOL, //8719
+    VALUE_TYPE_BOOL_VEC, //8720
 };
 
 struct item_node
@@ -43,6 +47,7 @@ struct item_node
     char *name;
     int val_type;
     int val_len;
+    char *ref_type;
 
     union{
         char *str_val;
@@ -75,6 +80,7 @@ struct inc_file
 };
 
 extern struct item_node * tpp_new_node(int val_type);
+extern struct item_node * tpp_new_ref_node(const char *name, int val_type);
 
 extern struct item_node * tpp_item_node_set_name(struct item_node *node, char *name);
 extern struct protocol * tpp_item_list_add_node(struct protocol *p , struct item_node *node);

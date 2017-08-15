@@ -19,6 +19,25 @@ struct item_node * tpp_new_node(int val_type)
         return node;
 
     node->val_type = val_type;
+    node->ref_type = NULL;
+    node->next = NULL;
+
+    return node;
+}
+
+struct item_node * tpp_new_ref_node(const char *name, int val_type)
+{
+    struct protocol *p = tpp_protocol_get(name);
+    if (!p){
+        return NULL;
+    }
+    struct item_node *node;
+    node = malloc(sizeof(struct item_node));
+    if(!node)
+        return node;
+
+    node->val_type = val_type;
+    node->ref_type = name;
     node->next = NULL;
 
     return node;
@@ -26,6 +45,7 @@ struct item_node * tpp_new_node(int val_type)
 
 struct item_node * tpp_item_node_set_name(struct item_node *node , char *name)
 {
+    if (!node) return NULL;
     node->name = name; 
     return node;
 }
@@ -33,6 +53,8 @@ struct item_node * tpp_item_node_set_name(struct item_node *node , char *name)
 struct protocol * tpp_protocol_new(struct item_node *node)
 {
     struct protocol *prtc;
+
+    if (!node) return NULL;
 
     prtc = malloc(sizeof(struct protocol));
     if(!prtc)
@@ -47,12 +69,17 @@ struct protocol * tpp_protocol_new(struct item_node *node)
 
 struct protocol * tpp_protocol_set_name(struct protocol *p , char *name)
 {
+    if (!p) return NULL;
+
     p->name = name;
     return p;
 }
 
 struct protocol * tpp_item_list_add_node(struct protocol *p, struct item_node *node)
 {
+    if (!p) return NULL;
+    if (!node) return p;
+
     p->tail->next = node;
     p->tail = node;
 

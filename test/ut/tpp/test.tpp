@@ -1,5 +1,8 @@
+protocol Conf { int8 i8; };
 protocol CloseConf
 {
+    Conf cc_ref;
+
     byte b1;
     repeat byte rb;
 

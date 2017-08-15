@@ -24,7 +24,7 @@ void tpperror(char *s, ...);
 %token <strval> ID 
 %token <strval> STRINGVAL
 %token <intval> INTEGER8 UINTEGER8 INTEGER16 UINTEGER16 INTEGER32 UINTEGER32 NUM STRING BYTE
-%token <intval> INT SHORT CHAR
+%token <intval> INT SHORT CHAR BOOL
 %token <longval> LONG INTEGER64 UINTEGER64
 %token <doubleval> DOUBLE FLOAT
 %token PROTOCOL
@@ -57,6 +57,8 @@ col_definition: def_type ID ';'   { $$ = tpp_item_node_set_name($1 , $2);}
 
 def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
 | REPEAT BYTE                        {$$ = tpp_new_node(VALUE_TYPE_BYTE_VEC);}
+| BOOL                               {$$ = tpp_new_node(VALUE_TYPE_BOOL);}
+| REPEAT BOOL                        {$$ = tpp_new_node(VALUE_TYPE_BOOL_VEC);}
 | INTEGER8                           {$$ = tpp_new_node(VALUE_TYPE_INT8);}
 | REPEAT INTEGER8                    {$$ = tpp_new_node(VALUE_TYPE_INT8_VEC);}
 | UINTEGER8                          {$$ = tpp_new_node(VALUE_TYPE_UINT8);}
@@ -87,6 +89,8 @@ def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
 | REPEAT CHAR                        {$$ = tpp_new_node(VALUE_TYPE_CHAR_VEC);}
 | STRING                             {$$ = tpp_new_node(VALUE_TYPE_STR);}
 | REPEAT STRING                      {$$ = tpp_new_node(VALUE_TYPE_STR_VEC);}
+| ID                                 {$$ = tpp_new_ref_node($1, VALUE_TYPE_REF); if (!$$) tpperror("The type %s doesn't declared", $1);}
+| REPEAT ID                          {$$ = tpp_new_ref_node($2, VALUE_TYPE_REF_VEC); if (!$$) tpperror("The type %s doesn't declared", $2);}
 ;
 
 %%
@@ -98,6 +102,9 @@ tpperror(char *s, ...)
     va_start(ap, s);
 
     fprintf(stderr, "%d:  error: ", tpplineno);
+    //if(yylloc.first_line)
+    //    fprintf(stderr, "%d.%d-%d.%d: error: ", yylloc.first_line, yylloc.first_column,
+    //            yylloc.last_line, yylloc.last_column);
     vfprintf(stderr, s, ap);
     fprintf(stderr, "\n");
 }
