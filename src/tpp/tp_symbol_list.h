@@ -76,11 +76,11 @@ struct key_val
 struct inc_file
 {
     struct inc_file *next;
-    char *file_name;
+    const char *filename;
 };
 
 extern struct item_node * tpp_new_node(int val_type);
-extern struct item_node * tpp_new_ref_node(const char *name, int val_type);
+extern struct item_node * tpp_new_ref_node(char *name, int val_type);
 
 extern struct item_node * tpp_item_node_set_name(struct item_node *node, char *name);
 extern struct protocol * tpp_item_list_add_node(struct protocol *p , struct item_node *node);

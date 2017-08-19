@@ -11,6 +11,62 @@ static struct protocol *proto_tab_tail = NULL;
 static struct inc_file *incfile_head = NULL;
 static struct inc_file *incfile_tail = NULL;
 
+
+static void tpp_add_inc_file_node(const char *filename)
+{
+    struct inc_file *inc = NULL;
+    for (inc = incfile_head; inc != NULL; inc=inc->next){
+        if (strcmp(filename, inc->filename) == 0){
+            // has include
+            return;
+        }
+    }
+
+    inc = malloc(sizeof(struct inc_file));
+    inc->filename = filename;
+    inc->next = NULL;
+
+    if (incfile_head == NULL){
+        incfile_head = inc;
+        incfile_tail = inc;
+    }else{
+        incfile_tail->next = inc;
+        incfile_tail = inc;
+    }
+}
+static void tpp_add_inc_file(int val_type)
+{
+    // Add inc file
+    if (val_type == VALUE_TYPE_STR){
+        tpp_add_inc_file_node("string");
+        tpp_add_inc_file_node("string");
+    }else if( val_type == VALUE_TYPE_STR_VEC){
+        tpp_add_inc_file_node("string");
+        tpp_add_inc_file_node("vector");
+    } else if (val_type == VALUE_TYPE_STR_VEC
+            || val_type == VALUE_TYPE_BYTE_VEC
+            || val_type == VALUE_TYPE_INT8_VEC
+            || val_type == VALUE_TYPE_INT16_VEC
+            || val_type == VALUE_TYPE_UINT8_VEC
+            || val_type == VALUE_TYPE_UINT16_VEC
+            || val_type == VALUE_TYPE_INT32_VEC
+            || val_type == VALUE_TYPE_UINT32_VEC
+            || val_type == VALUE_TYPE_INT64_VEC
+            || val_type == VALUE_TYPE_UINT64_VEC
+            || val_type == VALUE_TYPE_DOUBLE_VEC
+            || val_type == VALUE_TYPE_FLOAT_VEC
+            || val_type == VALUE_TYPE_LONG_VEC
+            || val_type == VALUE_TYPE_INT_VEC
+            || val_type == VALUE_TYPE_SHORT_VEC
+            || val_type == VALUE_TYPE_CHAR_VEC
+            || val_type == VALUE_TYPE_REF_VEC
+            || val_type == VALUE_TYPE_BOOL_VEC){
+        tpp_add_inc_file_node("vector");
+    }else{
+        // No need to include header file
+    }
+}
+
 struct item_node * tpp_new_node(int val_type)
 {
     struct item_node *node;
@@ -21,17 +77,18 @@ struct item_node * tpp_new_node(int val_type)
     node->val_type = val_type;
     node->ref_type = NULL;
     node->next = NULL;
-
+    
+    tpp_add_inc_file(val_type);
     return node;
 }
 
-struct item_node * tpp_new_ref_node(const char *name, int val_type)
+struct item_node * tpp_new_ref_node(char *name, int val_type)
 {
+    struct item_node *node = NULL;
     struct protocol *p = tpp_protocol_get(name);
     if (!p){
         return NULL;
     }
-    struct item_node *node;
     node = malloc(sizeof(struct item_node));
     if(!node)
         return node;
@@ -39,6 +96,8 @@ struct item_node * tpp_new_ref_node(const char *name, int val_type)
     node->val_type = val_type;
     node->ref_type = name;
     node->next = NULL;
+
+    tpp_add_inc_file(val_type);
 
     return node;
 }

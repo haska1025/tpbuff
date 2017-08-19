@@ -4,7 +4,7 @@
 
 #define tp_gen_cxx_getter_setter_type(type) \
     do {\
-        fprintf(out, "  " #type "%s(){return %s_;}\n", in->name, in->name);\
+        fprintf(out, "  " #type " %s(){return %s_;}\n", in->name, in->name);\
         fprintf(out, "  void %s(" #type " i){%s_=i;}\n\n", in->name, in->name);\
     }while(0);
 
@@ -88,7 +88,7 @@ static int tp_gen_cxx_getter_setter(FILE *out, struct item_node *n)
         }else if (in->val_type == VALUE_TYPE_BOOL_VEC){
             tp_gen_cxx_getter_setter_type_vec(bool);
         }else if (in->val_type == VALUE_TYPE_REF){
-            fprintf(out, "  %s *%s();\n",in->ref_type, in->name);
+            fprintf(out, "  %s *%s(){return %s_;}\n",in->ref_type, in->name, in->name);
             fprintf(out, "  %s *mutable_%s();\n",in->ref_type, in->name);
             fprintf(out, "  void set_allocated_%s(%s *alloc_ptr);\n\n",in->name, in->ref_type);
         }
@@ -166,6 +166,14 @@ static int tp_gen_cxx_data_member(FILE *out, struct item_node *n)
             fprintf(out, "  float %s_;\n", in->name);
         }else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
             fprintf(out, "  std::vector<float> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_BOOL){
+            fprintf(out, "  bool %s_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_BOOL_VEC){
+            fprintf(out, "  std::vector<bool> %s_vec_;\n", in->name);
+        }else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  %s *%s_;\n", in->ref_type, in->name);
+        }else if (in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "  std::vector<%s*> %s_vec_;\n", in->ref_type, in->name);
         }
     }
 }
@@ -190,7 +198,7 @@ static int tp_gen_cxx_proto_decl(FILE *out, struct protocol *p)
     return 0;
 }
 
-static int tp_gen_cxx_proto_impl_ctor(FILE *out, struct protocol *p)
+static void tp_gen_cxx_proto_impl_ctor(FILE *out, struct protocol *p)
 {
     struct item_node *in = NULL;
     // Generate constructor
@@ -217,6 +225,59 @@ static int tp_gen_cxx_proto_impl_ctor(FILE *out, struct protocol *p)
     }
     fprintf(out, "}\n");
 }
+
+static void tp_gen_cxx_proto_impl_dtor(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+    // Generate constructor
+    fprintf(out, "%s::~%s()\n{\n", p->name, p->name);
+    in = p->head;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  if (%s_ != NULL){\n", in->name);
+            fprintf(out, "    delete %s_;\n", in->name);
+            fprintf(out, "    %s_ = NULL;\n", in->name);
+            fprintf(out, "  }\n");
+        } else if(in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "  int %s_size = %s_vec_.size();\n", in->name, in->name);
+            fprintf(out, "  // Delete element iteratively\n");
+            fprintf(out, "  for(int i=0; i < %s_size; i++){\n", in->name);
+            fprintf(out, "    if (%s_vec_[i] != NULL){\n", in->name);
+            fprintf(out, "      delete %s_vec_[i];\n", in->name);
+            fprintf(out, "    }\n");
+            fprintf(out, "  }\n");
+            fprintf(out, "  %s_vec_.clear()\n\n", in->name);
+        }
+    }
+    fprintf(out, "}\n");
+}
+
+static void tp_gen_cxx_proto_impl_ref(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+    // Generate constructor
+    in = p->head;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "\n//Mutable function\n");
+            fprintf(out, "%s::mutable_%s()\n{\n", p->name, in->name);
+            fprintf(out, "  if (!%s_){\n", in->name);
+            fprintf(out, "    %s_ = new %s();\n", in->name, in->ref_type);
+            fprintf(out, "  }\n");
+            fprintf(out, "  return %s_;\n", in->name);
+            fprintf(out, "}\n");
+
+            fprintf(out, "\n//Alloc set function\n");
+            fprintf(out, "%s::set_allocated_%s(%s *alloc_ptr)\n{\n", p->name, in->name, in->ref_type);
+            fprintf(out, "  if (%s_ != NULL){\n", in->name);
+            fprintf(out, "    delete %s_;\n", in->name);
+            fprintf(out, "  }\n");
+            fprintf(out, "  %s_ = alloc_ptr;\n", in->name);
+            fprintf(out, "}\n");
+        }
+    }
+}
+
 
 #define tp_gen_cxx_proto_impl_serialize_vec(type) \
     do{\
@@ -323,7 +384,7 @@ static int tp_gen_cxx_proto_impl_serialize(FILE *out, struct protocol *p)
             fprintf(out, "  oa->writeInt(tpb, %s_size);\n", in->name);
             fprintf(out, "  // Write element iteratively\n");
             fprintf(out, "  for(int i=0; i < %s_size; i++){\n", in->name);
-            fprintf(out, "    %s_->Serialize(oa);\n", in->name);
+            fprintf(out, "    %s()->Serialize(oa);\n", in->name);
             fprintf(out, "  }\n\n");
         }
     }
@@ -405,12 +466,13 @@ static int tp_gen_cxx_proto_impl_deserialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
             tp_gen_cxx_proto_impl_deserialize_vec(Int8);
         } else if (in->val_type == VALUE_TYPE_REF){
-            fprintf(out, "  %s_->Deserialize(ia);\n", in->name);
+            fprintf(out, "  mutable_%s()->Deserialize(ia);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_REF_VEC){
             fprintf(out, "\n  // Read size firstly\n");
             fprintf(out, "  int %s_size = ia->readInt(tpb);\n", in->name);
             fprintf(out, "  // Read element iteratively\n");
             fprintf(out, "  for(int i=0; i < %s_size; i++){\n", in->name);
+            fprintf(out, "    %s_vec_[i] = mutable_%s();\n", in->name, in->name);
             fprintf(out, "    %s_vec_[i]->Deserialize(ia);\n", in->name);
             fprintf(out, "  }\n\n");
         }
@@ -439,10 +501,12 @@ static int tp_gen_cxx_proto_impl_bytesize(FILE *out, struct protocol *p)
                 || in->val_type == VALUE_TYPE_LONG
                 || in->val_type == VALUE_TYPE_CHAR
                 || in->val_type == VALUE_TYPE_DOUBLE
-                || in->val_type == VALUE_TYPE_FLOAT){
+                || in->val_type == VALUE_TYPE_FLOAT
+                || in->val_type == VALUE_TYPE_BOOL){
             fprintf(out, "  totalsize += sizeof(%s_);\n", in->name);
         }else if (in->val_type == VALUE_TYPE_BYTE_VEC
                 || in->val_type == VALUE_TYPE_INT8_VEC
+                || in->val_type == VALUE_TYPE_BOOL_VEC
                 || in->val_type == VALUE_TYPE_UINT8_VEC){
             fprintf(out, "  totalsize += sizeof(uint8_t)*%s_vec_.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT16_VEC
@@ -472,9 +536,15 @@ static int tp_gen_cxx_proto_impl_bytesize(FILE *out, struct protocol *p)
             fprintf(out, "  totalsize += sizeof(double)*%s_vec_.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
             fprintf(out, "  totalsize += sizeof(float)*%s_vec_.size();\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  totalsize += %s()->ByteSize();\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "  for (int i=0; i < %s_vec_.size();i++){\n", in->name);
+            fprintf(out, "    totalsize += %s_vec_[i]->ByteSize();\n", in->name);
+            fprintf(out, "  }\n");
         }
     }
-    fprintf(out, "return totalsize;\n");
+    fprintf(out, "  return totalsize;\n");
     fprintf(out, "}\n");
 
     return 0;
@@ -491,9 +561,7 @@ static int tp_gen_cxx_proto_impl(FILE *out, struct protocol *p)
     fprintf(out, "}\n");
 
     // Generate destructor
-    fprintf(out, "%s::~%s()\n{\n", p->name, p->name);
-    // delete object type
-    fprintf(out, "}\n");
+    tp_gen_cxx_proto_impl_dtor(out, p);
 
     // Generate serialize
     tp_gen_cxx_proto_impl_serialize(out, p);
@@ -502,16 +570,24 @@ static int tp_gen_cxx_proto_impl(FILE *out, struct protocol *p)
     // Generate ByteSize
     tp_gen_cxx_proto_impl_bytesize(out, p);
 
+    tp_gen_cxx_proto_impl_ref(out, p);
 
     return 0;
 }
 
 static int tp_gen_cxx_inc_file(FILE *out)
 {
+    struct inc_file *inc, *inc_tab;
+
+    inc = inc_tab = NULL;
     // Generate include files
     fprintf(out, "\n#include <tpb_command.h>\n");
 
     // Other dynamic include
+    inc_tab = tpp_get_inc_file();
+    for (inc = inc_tab; inc != NULL; inc=inc->next){
+        fprintf(out, "#include <%s>\n", inc->filename);
+    }
 
     return 0;
 }
