@@ -25,9 +25,9 @@ Description: Debug symbol files for tpbuff
 #Description: Documentation for tpbuff
 # <insert long description, indented with spaces>
 
-#Package: tpbuff-dev
-#Section: devel
-#Architecture: any
-#Depends: tpbuff (= ${Source-Version})
-#Description: Develop package for tpbuff
-# <insert long description, indented with spaces>
+Package: tpbuff-dev
+Section: devel
+Architecture: any
+Depends: tpbuff (= ${Source-Version})
+Description: Develop package for tpbuff
+ <insert long description, indented with spaces>

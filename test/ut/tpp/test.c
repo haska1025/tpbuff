@@ -13,7 +13,7 @@ int main()
     tpp_display_protocol_table();
     tpp_protocol_tab_destroy();
 
-    if (0 != tp_gen_cxx_code(file_name)){
+    if (0 != tp_gen_cxx_code("./", file_name)){
         fprintf(stderr, "Generate code failed(%s)\n", file_name);
         return -1;
     }

@@ -1,5 +1,8 @@
 #include "tpb_tpbuff.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_RESERVE_HDR_LEN 20
 
 #ifdef MEMLEAK_DEBUG
 struct tp_buff * alloc_tpb_inner(uint32_t len)
@@ -8,9 +11,9 @@ struct tp_buff * alloc_tpb(uint32_t len)
 #endif
 {
     uint32_t size=len;
-    size += MAX_TM_HDR_LEN; 
+    size += MAX_RESERVE_HDR_LEN; 
     size += sizeof(struct tp_buff);
-    struct tp_buff *tpb = (struct tp_buff*)tm_malloc(size);
+    struct tp_buff *tpb = (struct tp_buff*)malloc(size);
     if (!tpb){
         printf("No memory can be allocated\n");
         return NULL;
@@ -40,7 +43,7 @@ void free_tpb_inner(struct tp_buff *tpb)
 void free_tpb(struct tp_buff *tpb)
 #endif
 {
-    tm_free((void*)tpb);
+    free((void*)tpb);
 }
 
 #ifdef MEMLEAK_DEBUG
@@ -49,7 +52,6 @@ void tpb_inc_ref_inner(struct tp_buff *tpb)
 void tpb_inc_ref(struct tp_buff *tpb)
 #endif
 {
-    tm_addRef((void*)tpb);
 }
 
 void tpb_dump(struct tp_buff *tpb, const char *prefix)

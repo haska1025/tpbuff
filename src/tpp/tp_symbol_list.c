@@ -235,10 +235,16 @@ void tpp_protocol_tab_destroy()
         for (; h != NULL; ){
             h1 = h; 
             h = h->next;
+            if (h1->name){
+                free(h1->name);
+            }
             free(h1);
         }
         p1 = p;
         p = p->next;
+        if (p1->name){
+            free(p1->name);
+        }
         free(p1);
     }
     proto_tab_head = NULL;
@@ -248,5 +254,19 @@ void tpp_protocol_tab_destroy()
 struct inc_file * tpp_get_inc_file()
 {
     return incfile_head;
+}
+
+void tpp_destroy_inc_file()
+{
+    struct inc_file *inc = incfile_head;
+    struct inc_file *inc2;
+    for (; inc != NULL;){
+        inc2 = inc;
+        inc = inc->next;
+        free(inc2);
+    }
+
+    incfile_head = NULL;
+    incfile_tail = NULL;
 }
 

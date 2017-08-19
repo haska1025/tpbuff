@@ -6,8 +6,8 @@
 #include <set>
 #include <assert.h>
 #include <string.h>
-
-#include "BaseDataType.h"
+#include "tpb_inputarchive.h"
+#include "tpb_outputarchive.h"
 
 using namespace std;
 /*--------------------------------  DEFINITION ----------------------------------------*/
@@ -16,18 +16,16 @@ using namespace std;
 class BinArchive;
 class BinDearchive;
 
-bool serialize(BinArchive& arch, const char v);
-bool serialize(BinArchive& arch, const unsigned char v);
-bool serialize(BinArchive& arch, const short v);
-bool serialize(BinArchive& arch, const unsigned short v);
-bool serialize(BinArchive& arch, const int v);
-bool serialize(BinArchive& arch, const unsigned int v);
-bool serialize(BinArchive& arch, const long v);
-bool serialize(BinArchive& arch, const unsigned long v);
-bool serialize(BinArchive& arch, const float v);
-bool serialize(BinArchive& arch, const double v);
-bool serialize(BinArchive& arch, const uint64_t v);
-bool serialize(BinArchive& arch, const int64_t v);
+bool serialize(BinArchive& arch, float v);
+bool serialize(BinArchive& arch, double v);
+bool serialize(BinArchive& arch, uint64_t v);
+bool serialize(BinArchive& arch, int64_t v);
+bool serialize(BinArchive& arch, uint8_t v);
+bool serialize(BinArchive& arch, int8_t v);
+bool serialize(BinArchive& arch, uint16_t v);
+bool serialize(BinArchive& arch, int16_t v);
+bool serialize(BinArchive& arch, uint32_t v);
+bool serialize(BinArchive& arch, int32_t v);
 
 bool serialize(BinArchive& arch, std::string& v, int lenSize=4, bool clear = true);
 bool serialize(BinArchive& arch, const std::string& v, int lenSize=4, bool clear = true);
@@ -98,7 +96,7 @@ bool serialize(Arch& arch, const CONT<T>& v, int lenSize = 4)
 }
 
 
-class BinArchive
+class BinArchive : public OutputArchive
 {
 public:	
 	// 外部给数据，并负责数据的删除
@@ -107,15 +105,32 @@ public:
 		, inner_buffer_size_(buffer_size)
 		, cur_pos_(0)
 	{
-		ASSERT_D(!!buffer);
-		ASSERT_D(inner_buffer_size_ > 0);
+		assert(!!buffer);
+		assert(inner_buffer_size_ > 0);
 	}
-	void reset() { cur_pos_ = 0; }
+
+    ~BinArchive(){}
+
+    void reset() { cur_pos_ = 0; }
+
+    virtual bool writeStr(std::string &s);
+    virtual bool writeInt8(int8_t i);
+    virtual bool writeInt16(int16_t i);
+    virtual bool writeInt32(int32_t i);
+    virtual bool writeInt64(int64_t i);
+
+    virtual bool writeUInt8(uint8_t i);
+    virtual bool writeUInt16(uint16_t i);
+    virtual bool writeUInt32(uint32_t i);
+    virtual bool writeUInt64(uint64_t i);
+    
+    virtual bool writeDouble(double d);
+    virtual bool writeFloat(float f);
 
 
 	bool serialize(const void* data, unsigned int dataLen)
 	{
-		ASSERT_D(inner_buffer_size_ >= cur_pos_ + dataLen);
+		assert(inner_buffer_size_ >= cur_pos_ + dataLen);
 		if (inner_buffer_size_ < cur_pos_ + dataLen)
 			return false;
 
@@ -148,18 +163,16 @@ private:
 /************************************************************************/
 /*                          BinDearchive                                */
 /************************************************************************/
-bool serialize(BinDearchive& dearch, char& v);
-bool serialize(BinDearchive& dearch, unsigned char& v);
-bool serialize(BinDearchive& dearch, short& v);
-bool serialize(BinDearchive& dearch, unsigned short& v);
-bool serialize(BinDearchive& dearch, int& v);
-bool serialize(BinDearchive& dearch, unsigned int& v);
-bool serialize(BinDearchive& dearch, long& v);
-bool serialize(BinDearchive& dearch, unsigned long& v);
 bool serialize(BinDearchive& dearch, float& v);
 bool serialize(BinDearchive& dearch, double& v);
 bool serialize(BinDearchive& dearch, uint64_t& v);
 bool serialize(BinDearchive& dearch, int64_t& v);
+bool serialize(BinDearchive& dearch, uint8_t  &v);
+bool serialize(BinDearchive& dearch, int8_t  &v);
+bool serialize(BinDearchive& dearch, uint16_t  &v);
+bool serialize(BinDearchive& dearch, int16_t  &v);
+bool serialize(BinDearchive& dearch, uint32_t  &v);
+bool serialize(BinDearchive& dearch, int32_t  &v);
 
 /// data, should provide memory and release by caller
 bool serialize(BinDearchive& dearch, char* data, unsigned int& dataLen, int lenSize=4);
@@ -266,7 +279,7 @@ bool serialize(BinDearchive& dearch, std::map<Key, Value>& v, int lenSize=4, boo
 	return true;
 }
 
-class BinDearchive
+class BinDearchive : public InputArchive
 {
 public:
 	/// data_size: the size of data, not the buffer size!
@@ -276,8 +289,8 @@ public:
 		, cur_pos_(0)
 	{
 		if (inner_data_size_ > 0)
-			ASSERT_D(!!data);
-		ASSERT_D(inner_data_size_ >= 0);
+			assert(!!data);
+		assert(inner_data_size_ >= 0);
 	}
 
 	BinDearchive()
@@ -285,16 +298,24 @@ public:
 		, inner_data_size_(0)
 		, cur_pos_(0)
 	{}
-	void setData(const char* data, unsigned int data_size)
-	{
-		inner_data_ = data;
-		inner_data_size_ = data_size;
-		cur_pos_ = 0;
 
-		if (inner_data_size_ > 0)
-			ASSERT_D(!!data);
-		ASSERT_D(inner_data_size_ >= 0);
-	}
+    ~BinDearchive(){}
+
+    // Outputarchive functions
+    virtual std::string readStr();
+    virtual double readDouble();
+    virtual float readFloat();
+
+    virtual int8_t readInt8();
+    virtual int16_t readInt16();
+    virtual int32_t readInt32();
+    virtual int64_t readInt64();
+
+    virtual uint8_t readUInt8();
+    virtual uint16_t readUInt16();
+    virtual uint32_t readUInt32();
+    virtual uint64_t readUInt64();
+
 
 	
 	bool serialize(void* d, unsigned int len)
@@ -302,7 +323,7 @@ public:
 		if (len == 0)
 			return true;
 
-		ASSERT_D(inner_data_size_ >= cur_pos_ + len);
+		assert(inner_data_size_ >= cur_pos_ + len);
 		if (inner_data_size_ < cur_pos_ + len)
 			return false;
 
@@ -314,7 +335,7 @@ public:
 
 	bool getTheRest(void* d, unsigned int& len)
 	{			
-		ASSERT_D(inner_data_size_ >= cur_pos_);
+		assert(inner_data_size_ >= cur_pos_);
 		len = inner_data_size_ - cur_pos_;
 		if (len == 0) {			
 			return true;
@@ -341,7 +362,7 @@ public:
 			serialize(&size, lenSize);
 		}
 
-		ASSERT_D(inner_data_size_ >= cur_pos_ + size);
+		assert(inner_data_size_ >= cur_pos_ + size);
 		if (inner_data_size_ < cur_pos_ + size)
 			return false;
 

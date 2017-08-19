@@ -2,6 +2,6 @@
 #define _TP_CXX_GENERATOR_H_
 
 // Generate protocol
-extern int tp_gen_cxx_code(const char *file);
+extern int tp_gen_cxx_code(const char *save_dir, const char *file);
 #endif//_TP_CXX_GENERATOR_H_
 

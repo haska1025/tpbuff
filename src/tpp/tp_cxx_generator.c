@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "tp_cxx_generator.h"
 #include "tp_symbol_list.h"
 
@@ -14,6 +17,27 @@
         fprintf(out, "  void %s_vec(std::vector<" #type "> &i){%s_vec_=i;}\n", in->name, in->name);\
         fprintf(out, "  void append_to_vec(" #type " i){%s_vec_.push_back(i);}\n\n", in->name);\
     }while(0);
+
+static char * tp_concat_path(const char *dir, const char *filename)
+{
+    char *tmp_dir = NULL;
+    int path_len, dir_len, filename_len;
+    
+    dir_len = strlen(dir);
+    filename_len = strlen(filename);
+
+    path_len = dir_len + filename_len + 2;
+    tmp_dir = malloc(path_len);
+    strncpy(tmp_dir, dir, dir_len);
+    if (dir[dir_len-1] != '/'){
+        tmp_dir[dir_len] = '/';
+        dir_len++;
+    }
+
+    strncpy(tmp_dir+dir_len, filename, filename_len);
+    
+    return tmp_dir;
+}
 
 static int tp_gen_cxx_getter_setter(FILE *out, struct item_node *n)
 {
@@ -592,14 +616,20 @@ static int tp_gen_cxx_inc_file(FILE *out)
     return 0;
 }
 
-int tp_gen_cxx_code(const char *file)
+int tp_gen_cxx_code(const char *save_dir, const char *file)
 {
     // Openfile
     FILE *hdrfile, *srcfile;
     struct protocol *proto, *cur_p;
+    char *tmp_dir = NULL;
 
     char hdrfilename[FILENAME_MAX]={0};
     char srcfilename[FILENAME_MAX]={0};
+
+    if (!file || file[0] == '\0'){
+        fprintf(stderr, "Can't parse invalid file name\n");
+        return -1;
+    }
 
     hdrfile = srcfile = NULL;
     cur_p = proto = NULL;
@@ -609,13 +639,30 @@ int tp_gen_cxx_code(const char *file)
     }
     snprintf(hdrfilename, FILENAME_MAX-1, "%s%s", file, ".tpp.h"); 
     snprintf(srcfilename, FILENAME_MAX-1, "%s%s", file, ".tpp.cpp"); 
+
+    if (!save_dir || save_dir[0] == '\0'){
+        tmp_dir = tp_concat_path("./", hdrfilename);
+    }else{
+        tmp_dir = tp_concat_path(save_dir, hdrfilename);
+    }
+
+
     // Create file for name.tpp.h
-    hdrfile = fopen(hdrfilename, "w+");
+    hdrfile = fopen(tmp_dir, "w+");
     if (!hdrfile){
-        fprintf(stderr, "Create the hdr file(%s) failed\n", hdrfilename);
+        fprintf(stderr, "Create the hdr file(%s) failed\n", tmp_dir);
+        free(tmp_dir);
         return -1;
     }
     // Create file for name.tpp.cpp
+    free(tmp_dir);
+
+    if (!save_dir || save_dir[0] == '\0'){
+        tmp_dir = tp_concat_path("./", srcfilename);
+    }else{
+        tmp_dir = tp_concat_path(save_dir, srcfilename);
+    }
+
     srcfile = fopen(srcfilename, "w+");
     if (!hdrfile){
         fprintf(stderr, "Create the src file(%s) failed\n", srcfilename);
@@ -665,5 +712,10 @@ int tp_gen_cxx_code(const char *file)
 
     fflush(srcfile);
     fclose(srcfile);
+
+    tpp_protocol_tab_destroy();
+    tpp_destroy_inc_file();
+
+    return 0;
 }
 

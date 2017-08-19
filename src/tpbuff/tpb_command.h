@@ -8,14 +8,14 @@ class Command
 {
 public:
     Command();
-    Command(struct tp_buff *tpb);
     virtual ~Command()=0;
     virtual bool Serialize(OutputArchive *oa) = 0;
     virtual bool Deserialize(InputArchive *ia) = 0;
     // Return the size of the object
     virtual int ByteSize()=0;
 
-    struct tp_buff tpb(){return tpb_;}
+    struct tp_buff *tpb(){return tpb_;}
+    void tpb(struct tp_buff *tpb){tpb_ = tpb;}
 private:
     struct tp_buff *tpb_;
 };

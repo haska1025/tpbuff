@@ -1,6 +1,20 @@
 #ifndef _TPB_TPBUFF_H_
 #define _TPB_TPBUFF_H_
 
+#include <inttypes.h>
+#include <string.h>
+
+#ifndef TPBUFF_DLL_DECL
+#   if defined(WIN32)
+#       ifndef TPBUFF_EXPORTS
+#           define TPBUFF_DLL_DECL __declspec(dllimport)
+#       else
+#           define TPBUFF_DLL_DECL __declspec(dllexport)
+#       endif//TPBUFF_EXPORTS
+#   else
+#       define TPBUFF_DLL_DECL
+#   endif//_WIN32
+#endif//TPBUFF_DLL_DECL
 /**
  * flags has 32 bits. format:
  * 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
@@ -79,9 +93,9 @@ struct tp_buff
 }
 /************** extern functions *************************/
 #ifdef MEMLEAK_DEBUG
-TM_DLL_DECL extern struct tp_buff * alloc_tpb_inner(uint32_t len);
-TM_DLL_DECL extern void free_tpb_inner(struct tp_buff *tpb);
-TM_DLL_DECL extern void tpb_inc_ref_inner(struct tp_buff *tpb);
+TPBUFF_DLL_DECL extern struct tp_buff * alloc_tpb_inner(uint32_t len);
+TPBUFF_DLL_DECL extern void free_tpb_inner(struct tp_buff *tpb);
+TPBUFF_DLL_DECL extern void tpb_inc_ref_inner(struct tp_buff *tpb);
 #define alloc_tpb(len) ({\
     struct tp_buff *buff = alloc_tpb_inner(len);\
     TRANS_LOG_INFO("tmbuff malloc %s %s:%d (%p) ", __FUNCTION__, __FILE__, __LINE__, buff);\
@@ -96,11 +110,11 @@ TM_DLL_DECL extern void tpb_inc_ref_inner(struct tp_buff *tpb);
     tpb_inc_ref_inner(tpb);\
 })
 #else
-TM_DLL_DECL extern struct tp_buff * alloc_tpb(uint32_t len);
-TM_DLL_DECL extern void free_tpb(struct tp_buff *tpb);
-TM_DLL_DECL extern void tpb_inc_ref(struct tp_buff *tpb);
+TPBUFF_DLL_DECL extern struct tp_buff * alloc_tpb(uint32_t len);
+TPBUFF_DLL_DECL extern void free_tpb(struct tp_buff *tpb);
+TPBUFF_DLL_DECL extern void tpb_inc_ref(struct tp_buff *tpb);
 #endif
-TM_DLL_DECL extern void tpb_dump(struct tp_buff *tpb, const char *prefix);
+TPBUFF_DLL_DECL extern void tpb_dump(struct tp_buff *tpb, const char *prefix);
 /************* inline functions **************************/
 static inline int tpb_list_empty(struct tp_buff *tpb)
 {
