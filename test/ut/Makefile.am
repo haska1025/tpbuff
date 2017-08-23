@@ -1,2 +1,2 @@
-SUBDIRS = tpp
-DIST_SUBDIRS= tpp
+SUBDIRS = tpp tpbuff
+DIST_SUBDIRS= tpp tpbuff

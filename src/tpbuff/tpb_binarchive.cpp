@@ -41,6 +41,8 @@ bool serialize(BinArchive& arch, const char*data, unsigned int dataLen, int lenS
 
 	return arch.serialize(data, dataLen);
 }
+
+BinArchive::~BinArchive(){}
 bool BinArchive::writeInt8(int8_t i)
 {
     return ::serialize(*this, i);
@@ -84,6 +86,10 @@ bool BinArchive::writeFloat(float f)
     return ::serialize(*this, f);
 }
 
+bool BinArchive::writeStr(std::string &s)
+{
+    return ::serialize(*this, s);
+}
 
 
 /************************************************************************/
@@ -127,6 +133,7 @@ bool serialize(BinDearchive& dearch, std::string& v, int lenSize, bool clear)
 }
 
 // BinDearchive implemetation
+BinDearchive::~BinDearchive(){}
 std::string BinDearchive::readStr()
 {
     std::string s;

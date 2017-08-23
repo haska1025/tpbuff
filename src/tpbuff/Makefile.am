@@ -18,5 +18,3 @@ pkgconfig_DATA = tpbuff.pc
 
 EXTRA_DIST = tpbuff.pc.in
 
-clean-local:
-	rm *.o bison_tp.c bison_tp.h flex_tp.c

@@ -79,6 +79,6 @@ dnl Final Output
 AC_OUTPUT([
 Makefile
 src/Makefile src/tpp/Makefile src/tpbuff/Makefile
-test/Makefile test/ut/Makefile test/ut/tpp/Makefile
+test/Makefile test/ut/Makefile test/ut/tpp/Makefile test/ut/tpbuff/Makefile
 ])
 

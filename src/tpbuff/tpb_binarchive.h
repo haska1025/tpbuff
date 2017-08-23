@@ -6,6 +6,7 @@
 #include <set>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 #include "tpb_inputarchive.h"
 #include "tpb_outputarchive.h"
 
@@ -109,7 +110,7 @@ public:
 		assert(inner_buffer_size_ > 0);
 	}
 
-    ~BinArchive(){}
+    ~BinArchive();
 
     void reset() { cur_pos_ = 0; }
 
@@ -131,8 +132,13 @@ public:
 	bool serialize(const void* data, unsigned int dataLen)
 	{
 		assert(inner_buffer_size_ >= cur_pos_ + dataLen);
-		if (inner_buffer_size_ < cur_pos_ + dataLen)
+		if (inner_buffer_size_ < cur_pos_ + dataLen){
+            printf("The buffer pos error. inner_buffer_size(%u) cur_pos(%u) dataLen(%u)",
+                    inner_buffer_size_,
+                    cur_pos_,
+                    dataLen);
 			return false;
+        }
 
 		if (dataLen > 0)
 		{
@@ -299,7 +305,7 @@ public:
 		, cur_pos_(0)
 	{}
 
-    ~BinDearchive(){}
+    ~BinDearchive();
 
     // Outputarchive functions
     virtual std::string readStr();

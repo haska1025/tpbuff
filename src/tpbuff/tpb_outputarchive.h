@@ -7,7 +7,7 @@
 class OutputArchive
 {
 public:
-    virtual ~OutputArchive()=0;
+    virtual ~OutputArchive(){};
     
     virtual bool writeStr(std::string &s) = 0;
 

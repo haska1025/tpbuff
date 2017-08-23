@@ -7,7 +7,7 @@
 class InputArchive
 {
 public:
-    virtual ~InputArchive()=0;
+    virtual ~InputArchive(){};
 
     virtual std::string readStr() = 0;
     virtual double readDouble() = 0;
