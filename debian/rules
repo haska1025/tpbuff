@@ -61,7 +61,7 @@ install: build
 	dh_installdirs
 
 	# Add here commands to install the package into debian/tmp
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tpbuff install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
 
 # Build architecture-independent files here.
@@ -75,7 +75,7 @@ binary-arch: build install
 #	dh_installchangelogs ChangeLog
 #	dh_installdocs
 #	dh_installexamples
-#	dh_install --sourcedir=debian/tmp
+	dh_install --sourcedir=debian/tmp
 #	dh_installmenu
 	dh_installdebconf	
 #	dh_installlogrotate
