@@ -1,0 +1,11 @@
+prefix=/tang
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: tpbuff
+Description: <<NEED UPDATE HERE>>
+Version: 1.0
+Libs: -L${exec_prefix}/lib -ltpbuff
+Cflags: -I${prefix}/include -I${prefix}/include/tpbuff 
+
