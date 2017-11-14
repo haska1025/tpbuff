@@ -91,6 +91,22 @@ bool BinArchive::writeStr(std::string &s)
     return ::serialize(*this, s);
 }
 
+bool BinArchive::writeChar(char c)
+{
+    return ::serialize(*this, c);
+}
+bool BinArchive::writeShort(short s)
+{
+    return ::serialize(*this, s);
+}
+bool BinArchive::writeInt(int i)
+{
+    return ::serialize(*this, i);
+}
+bool BinArchive::writeLong(long l)
+{
+    return ::serialize(*this, l);
+}
 
 /************************************************************************/
 /*                         BinDearchive                                 */
@@ -134,72 +150,80 @@ bool serialize(BinDearchive& dearch, std::string& v, int lenSize, bool clear)
 
 // BinDearchive implemetation
 BinDearchive::~BinDearchive(){}
-std::string BinDearchive::readStr()
+bool BinDearchive::readStr(std::string &v)
 {
-    std::string s;
-    ::serialize(*this, s);
-    return s;
+    return ::serialize(*this, v);
 }
 
-double BinDearchive::readDouble()
+bool BinDearchive::readDouble(double &v)
 {
-    double d;
-    ::serialize(*this, d);
-    return d;
+    return ::serialize(*this, v);
 }
-float BinDearchive::readFloat()
+bool BinDearchive::readFloat(float &v)
 {
-    float f;
-    ::serialize(*this, f);
-    return f;
+    return ::serialize(*this, v);
 }
-int8_t BinDearchive::readInt8()
+bool BinDearchive::readInt8(int8_t &v)
+{
+    return ::serialize(*this, v);
+}
+bool BinDearchive::readInt16(int16_t &v)
+{
+    return ::serialize(*this, v);
+}
+bool BinDearchive::readInt32(int32_t &v)
+{
+    return ::serialize(*this, v);
+}
+bool BinDearchive::readInt64(int64_t &v)
+{
+    return ::serialize(*this, v);
+}
+
+bool BinDearchive::readUInt8(uint8_t &v)
+{
+    return ::serialize(*this, v);
+}
+bool BinDearchive::readUInt16(uint16_t &v)
+{
+    return ::serialize(*this, v);
+}
+bool BinDearchive::readUInt32(uint32_t &v)
+{
+    return ::serialize(*this, v);
+}
+bool BinDearchive::readUInt64(uint64_t &v)
+{
+    return ::serialize(*this, v);
+}
+
+bool BinDearchive::readChar(char &v)
 {
     int8_t i;
-    ::serialize(*this, i);
-    return i;
+    bool rc = ::serialize(*this, i);
+    v = (char)i;
+    return rc;
 }
-int16_t BinDearchive::readInt16()
+bool BinDearchive::readShort(short &v)
 {
     int16_t i;
-    ::serialize(*this, i);
-    return i;
+    bool rc = ::serialize(*this, i);
+    v = (short)i;
+    return rc;
 }
-int32_t BinDearchive::readInt32()
+bool BinDearchive::readInt(int &v)
 {
     int32_t i;
-    ::serialize(*this, i);
-    return i;
+    bool rc = ::serialize(*this, i);
+    v = (int)i;
+    return rc;
 }
-int64_t BinDearchive::readInt64()
+bool BinDearchive::readLong(long &v)
 {
     int64_t i;
-    ::serialize(*this, i);
-    return i;
-}
+    bool rc = ::serialize(*this, i);
+    v = (long)i;
 
-uint8_t BinDearchive::readUInt8()
-{
-    uint8_t i;
-    ::serialize(*this, i);
-    return i;
-}
-uint16_t BinDearchive::readUInt16()
-{
-    uint16_t i;
-    ::serialize(*this, i);
-    return i;
-}
-uint32_t BinDearchive::readUInt32()
-{
-    uint32_t i;
-    ::serialize(*this, i);
-    return i;
-}
-uint64_t BinDearchive::readUInt64()
-{
-    uint64_t i;
-    ::serialize(*this, i);
-    return i;
+    return rc;
 }
 

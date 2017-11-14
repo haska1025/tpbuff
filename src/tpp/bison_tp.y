@@ -28,8 +28,9 @@ void tpperror(char *s, ...);
 %token <longval> LONG INTEGER64 UINTEGER64
 %token <doubleval> DOUBLE FLOAT
 %token PROTOCOL
-%token  REPEAT
-%token <intval> '{' '}' ';' '(' ')'
+%token REPEAT
+%token PROTID
+%token <intval> '{' '}' ';' '(' ')' '='
 
 %type <node_ptr> col_definition 
 %type <prtc_ptr> def_col_list
@@ -53,6 +54,8 @@ def_col_list:col_definition   { $$ = tpp_protocol_new($1);}
 ;
 
 col_definition: def_type ID ';'   { $$ = tpp_item_node_set_name($1 , $2);}
+| PROTID ID '=' NUM ';'      { $$ = tpp_new_int_protid_node($2 , $4);}
+| PROTID ID '=' STRINGVAL ';'   { $$ = tpp_new_hex_protid_node($2 , $4);}
 ;
 
 def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}

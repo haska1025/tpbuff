@@ -97,11 +97,34 @@ struct item_node * tpp_new_ref_node(char *name, int val_type)
     node->ref_type = name;
     node->next = NULL;
 
-    tpp_add_inc_file(val_type);
+    if (val_type == VALUE_TYPE_REF_VEC || val_type == VALUE_TYPE_REF){
+        tpp_add_inc_file(val_type);
+    }
 
     return node;
 }
 
+struct item_node * tpp_new_int_protid_node(char *name, int val)
+{
+    struct item_node *node = NULL;
+    node = tpp_new_node(VALUE_TYPE_PROTID_INT);
+    if (!node)return NULL;
+    
+    node->value.int_val = val;
+    node->name = name;
+    return node;
+}
+
+struct item_node * tpp_new_hex_protid_node(char *name, char *val)
+{
+    struct item_node *node = NULL;
+    node = tpp_new_node(VALUE_TYPE_PROTID_HEX);
+    if (!node)return NULL;
+
+    node->value.str_val = val;
+    node->name = name;
+    return node;
+}
 struct item_node * tpp_item_node_set_name(struct item_node *node , char *name)
 {
     if (!node) return NULL;

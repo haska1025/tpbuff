@@ -128,6 +128,10 @@ public:
     virtual bool writeDouble(double d);
     virtual bool writeFloat(float f);
 
+    virtual bool writeChar(char c);
+    virtual bool writeShort(short s);
+    virtual bool writeInt(int i);
+    virtual bool writeLong(long l);
 
 	bool serialize(const void* data, unsigned int dataLen)
 	{
@@ -308,21 +312,24 @@ public:
     ~BinDearchive();
 
     // Outputarchive functions
-    virtual std::string readStr();
-    virtual double readDouble();
-    virtual float readFloat();
+    virtual bool readStr(std::string &v);
+    virtual bool readDouble(double &v);
+    virtual bool readFloat(float &v);
 
-    virtual int8_t readInt8();
-    virtual int16_t readInt16();
-    virtual int32_t readInt32();
-    virtual int64_t readInt64();
+    virtual bool readInt8(int8_t &v);
+    virtual bool readInt16(int16_t &v);
+    virtual bool readInt32(int32_t &v);
+    virtual bool readInt64(int64_t &v);
 
-    virtual uint8_t readUInt8();
-    virtual uint16_t readUInt16();
-    virtual uint32_t readUInt32();
-    virtual uint64_t readUInt64();
+    virtual bool readUInt8(uint8_t &v);
+    virtual bool readUInt16(uint16_t &v);
+    virtual bool readUInt32(uint32_t &v);
+    virtual bool readUInt64(uint64_t &v);
 
-
+    virtual bool readChar(char &v);
+    virtual bool readShort(short &v);
+    virtual bool readInt(int &v);
+    virtual bool readLong(long &v);
 	
 	bool serialize(void* d, unsigned int len)
 	{

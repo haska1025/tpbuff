@@ -34,9 +34,11 @@
 "long"     {tpplval.longval = 8;return LONG;}
 "double"     {tpplval.doubleval= 8;return DOUBLE;}
 "float"     {tpplval.doubleval= 4;return FLOAT;}
+"protid"    {tpplval.intval=4;return PROTID;}
 
-[0-9]+          {tpplval.intval = atoi(yytext); return NUM;}
+-?[0-9]+          {tpplval.intval = atoi(yytext); return NUM;}
 ([a-zA-Z_]+)([a-zA-Z_0-9]*)       {tpplval.strval = strdup(yytext);return ID;}
+0[xX]+[0-9A-Fa-f]+          {tpplval.strval = strdup(yytext);return STRINGVAL;}
 
 \'([^'\\]|\\['"?\\abfnrtv]|\\[0-7]{1,3}|\\[Xx][0-9a-fA-F]+)+\' {
 int len = strlen(yytext);

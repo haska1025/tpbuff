@@ -1,7 +1,13 @@
-protocol Conf { int8 i8; };
+protocol Conf
+{ 
+    int8 i8; 
+};
 protocol CloseConf
 {
+    protid CMD_CLOSE_CONFERENCE = 0x22;
+
     Conf cc_ref;
+    repeat Conf rcc_ref;
 
     byte b1;
     repeat byte rb;
@@ -38,5 +44,17 @@ protocol CloseConf
 
     string str;
     repeat string rstr;
+
+    char c;
+    repeat char rc;
+
+    short s;
+    repeat short rs;
+
+    int ivalue;
+    repeat int ri;
+
+    long lvalue;
+    repeat long rl;
 };
 

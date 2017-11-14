@@ -9,19 +9,24 @@ class InputArchive
 public:
     virtual ~InputArchive(){};
 
-    virtual std::string readStr() = 0;
-    virtual double readDouble() = 0;
-    virtual float readFloat() = 0;
+    virtual bool readStr(std::string &v) = 0;
+    virtual bool readDouble(double &v) = 0;
+    virtual bool readFloat(float &v) = 0;
 
-    virtual int8_t readInt8() = 0;
-    virtual int16_t readInt16() = 0;
-    virtual int32_t readInt32() = 0;
-    virtual int64_t readInt64() = 0;
+    virtual bool readInt8(int8_t &v) = 0;
+    virtual bool readInt16(int16_t &v) = 0;
+    virtual bool readInt32(int32_t &v) = 0;
+    virtual bool readInt64(int64_t &v) = 0;
 
-    virtual uint8_t readUInt8() = 0;
-    virtual uint16_t readUInt16() = 0;
-    virtual uint32_t readUInt32() = 0;
-    virtual uint64_t readUInt64() = 0;
+    virtual bool readUInt8(uint8_t &v) = 0;
+    virtual bool readUInt16(uint16_t &v) = 0;
+    virtual bool readUInt32(uint32_t &v) = 0;
+    virtual bool readUInt64(uint64_t &v) = 0;
+
+    virtual bool readChar(char &v) = 0;
+    virtual bool readShort(short &v) = 0;
+    virtual bool readInt(int &v) = 0;
+    virtual bool readLong(long &v) = 0;
 };
 
 #endif//_TANG_TPB_INPUTARCHIVE_H_

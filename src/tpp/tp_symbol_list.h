@@ -39,6 +39,8 @@ enum value_type{
     VALUE_TYPE_REF_VEC,//8718
     VALUE_TYPE_BOOL, //8719
     VALUE_TYPE_BOOL_VEC, //8720
+    VALUE_TYPE_PROTID_INT, //8721
+    VALUE_TYPE_PROTID_HEX, //8722
 };
 
 struct item_node
@@ -81,6 +83,8 @@ struct inc_file
 
 extern struct item_node * tpp_new_node(int val_type);
 extern struct item_node * tpp_new_ref_node(char *name, int val_type);
+extern struct item_node * tpp_new_int_protid_node(char *name, int val);
+extern struct item_node * tpp_new_hex_protid_node(char *name, char *val);
 
 extern struct item_node * tpp_item_node_set_name(struct item_node *node, char *name);
 extern struct protocol * tpp_item_list_add_node(struct protocol *p , struct item_node *node);
@@ -95,5 +99,6 @@ extern void tpp_display_protocol_table();
 extern void tpp_protocol_tab_destroy();
 
 extern struct inc_file * tpp_get_inc_file();
+extern void tpp_destroy_inc_file();
 #endif//_TP_SYMBOL_LIST_H_
 

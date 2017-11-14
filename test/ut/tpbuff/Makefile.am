@@ -1,5 +1,7 @@
 check_PROGRAMS=tpbuff_ut
 
+TESTS=tpbuff_ut
+
 nodist_tpbuff_ut_SOURCES=test.tpp.cpp
 
 tpbuff_ut_SOURCES=test.cpp \

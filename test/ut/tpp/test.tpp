@@ -1,6 +1,10 @@
-protocol Conf { int8 i8; };
+protocol Conf {
+    protid ConfCMD=0XAfe8;
+    int8 i8;
+};
 protocol CloseConf
 {
+    protid CloseConfCMD=0x22;
     Conf cc_ref;
 
     byte b1;

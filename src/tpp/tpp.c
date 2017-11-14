@@ -2,12 +2,18 @@
 #include <getopt.h>
 #include <stdlib.h>
 
+#include "tp_cxx_generator.h"
+
+// The global variable definition
+int g_gen_struct = 0;
+
 void usage()
 {
     fprintf(stderr, "Usage: tpp [option] TPP_FILES\n");
     fprintf(stderr, "  --help -h             help information\n");
     fprintf(stderr, "  --cppout=DIR          Generate cplusplus code, The DIR is used to save files.\n");
     fprintf(stderr, "  --javaout=DIR         Generate java code, The DIR is used to save files.\n");
+    fprintf(stderr, "  --struct -s           Generate struct message which doesn't has getter/setter method.\n");
     exit(0);
 }
 
@@ -16,6 +22,7 @@ int main(int argc, char *argv[])
     // tpp [option] TPP_FILES
     // --cppout <dir> 
     // --javaout <dir>
+    // --struct
 
     int c;
     // 1: cpp, 2: java
@@ -31,19 +38,23 @@ int main(int argc, char *argv[])
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
-            {"help",  no_argument,       0,  'h' },
+            {"help",    no_argument,       0, 'h'},
             {"cppout",  required_argument, 0,  1 },
             {"javaout", required_argument, 0,  2 },
+            {"struct",  no_argument,       0, 's'},
             {0,         0,                 0,  0 }
         };
 
-        c = getopt_long(argc, argv, "h", long_options, &option_index);
+        c = getopt_long(argc, argv, "hs", long_options, &option_index);
         if (c == -1)
             break;
 
         switch (c) {
             case 'h':
                 usage();
+                break;
+            case 's':
+                g_gen_struct = 1;
                 break;
             case 1:
                 cpp_dir = optarg;
