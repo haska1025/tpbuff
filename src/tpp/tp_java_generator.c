@@ -52,7 +52,7 @@ static int tp_gen_java_getter_setter(FILE *out, struct item_node *n)
         }else if (in->val_type == VALUE_TYPE_INT64_VEC){
             tp_gen_java_getter_setter_type_vec(long);
         }else if (in->val_type == VALUE_TYPE_UINT64){
-            tp_gen_java_getter_setter_type_vec(long);
+            tp_gen_java_getter_setter_type(long);
         }else if (in->val_type == VALUE_TYPE_UINT64_VEC){
             tp_gen_java_getter_setter_type_vec(long);
         }else if (in->val_type == VALUE_TYPE_INT){
@@ -82,8 +82,7 @@ static int tp_gen_java_getter_setter(FILE *out, struct item_node *n)
         }else if (in->val_type == VALUE_TYPE_STR){
             tp_gen_java_getter_setter_type(String);
         }else if (in->val_type == VALUE_TYPE_STR_VEC){
-            fprintf(out, "  public List<String> get%c%s(){return %s;}\n",toupper(in->name[0]), (in->name+1), in->name);
-            fprintf(out, "  public void set%c%s(List<String> param){%s = param;}\n",toupper(in->name[0]), (in->name+1), in->name);
+            tp_gen_java_getter_setter_type_vec(String);
         }else if (in->val_type == VALUE_TYPE_BOOL){
             tp_gen_java_getter_setter_type(boolean);
         }else if (in->val_type == VALUE_TYPE_BOOL_VEC){
@@ -185,8 +184,8 @@ static int tp_gen_java_data_member(FILE *out, struct item_node *n)
 #define tp_gen_java_proto_impl_serialize_vec(type) \
     do{\
         fprintf(out, "\n    // Write size firstly\n");\
-        fprintf(out, "    int %s_size = %s.size();\n", in->name, in->name);\
-        fprintf(out, "    oa.writeInt(tpb, %s_size);\n", in->name);\
+        fprintf(out, "    int %s_size = %s.length;\n", in->name, in->name);\
+        fprintf(out, "    oa.writeInt(%s_size);\n", in->name);\
         fprintf(out, "    // Write element iteratively\n");\
         fprintf(out, "    for(int i=0; i < %s_size; i++){\n", in->name);\
         fprintf(out, "      oa.write" #type "(%s[i]);\n", in->name);\
@@ -196,20 +195,18 @@ static int tp_gen_java_data_member(FILE *out, struct item_node *n)
 #define tp_gen_java_proto_impl_deserialize_vec(type, datatype) \
     do{\
         fprintf(out, "\n    // Read size firstly\n");\
-        fprintf(out, "    int %s_size = ia.readInt(tpb);\n", in->name);\
-        fprintf(out, "    %s = new " #datatype "[%s_size]\n", in->name, in->name);\
+        fprintf(out, "    int %s_size = ia.readInt();\n", in->name);\
+        fprintf(out, "    %s = new " #datatype "[%s_size];\n", in->name, in->name);\
         fprintf(out, "    // Read element iteratively\n");\
         fprintf(out, "    for(int i=0; i < %s_size; i++){\n", in->name);\
         fprintf(out, "      %s[i] = ia.read" #type "();\n", in->name);\
         fprintf(out, "    }\n\n");\
     } while(0);
 
-
-     
 static int tp_gen_java_proto_impl_serialize(FILE *out, struct protocol *p)
 {
     struct item_node *in = NULL;
-    fprintf(out, "  public void Serialize(OutputArchive *oa)throws IOException{\n");
+    fprintf(out, "  public void serialize(OutputArchive oa)throws IOException{\n");
     in = p->head;
     for (; in != NULL; in=in->next){
         if (in->val_type == VALUE_TYPE_BYTE){
@@ -237,9 +234,9 @@ static int tp_gen_java_proto_impl_serialize(FILE *out, struct protocol *p)
         }else if (in->val_type == VALUE_TYPE_INT32_VEC){
             tp_gen_java_proto_impl_serialize_vec(Int);
         }else if (in->val_type == VALUE_TYPE_UINT32){
-            fprintf(out, "    oa.writeInt(%s);\n", in->name);
+            fprintf(out, "    oa.writeUInt(%s);\n", in->name);
         }else if (in->val_type == VALUE_TYPE_UINT32_VEC){
-            tp_gen_java_proto_impl_serialize_vec(Int);
+            tp_gen_java_proto_impl_serialize_vec(UInt);
         }else if (in->val_type == VALUE_TYPE_INT64){
             fprintf(out, "    oa.writeLong(%s);\n", in->name);
         }else if (in->val_type == VALUE_TYPE_INT64_VEC){
@@ -281,14 +278,14 @@ static int tp_gen_java_proto_impl_serialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
             tp_gen_java_proto_impl_serialize_vec(Bool);
         } else if (in->val_type == VALUE_TYPE_REF){
-            fprintf(out, "    %s.Serialize(oa);\n", in->name);
+            fprintf(out, "    %s.serialize(oa);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_REF_VEC){
             fprintf(out, "\n    // Write size firstly\n");
             fprintf(out, "    int %s_size = %s.size();\n", in->name, in->name);
             fprintf(out, "    oa.writeInt(%s_size);\n", in->name);
             fprintf(out, "    // Write element iteratively\n");
             fprintf(out, "    for(int i=0; i < %s_size; i++){\n", in->name);
-            fprintf(out, "      %s.get(i).Serialize(oa);\n", in->name);
+            fprintf(out, "      %s.get(i).serialize(oa);\n", in->name);
             fprintf(out, "    }\n\n");
         }
     }
@@ -298,7 +295,7 @@ static int tp_gen_java_proto_impl_serialize(FILE *out, struct protocol *p)
 static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
 {
     struct item_node *in = NULL;
-    fprintf(out, "  public void Deserialize(InputArchive *ia)throws IOException{\n");
+    fprintf(out, "  public void deserialize(InputArchive ia)throws IOException{\n");
     in = p->head;
     for (; in != NULL; in=in->next){
         if (in->val_type == VALUE_TYPE_BYTE){
@@ -320,7 +317,7 @@ static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_UINT16){
             fprintf(out, "    %s = ia.readShort();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_UINT16_VEC){
-            tp_gen_java_proto_impl_deserialize_vec(Short, short);
+            tp_gen_java_proto_impl_deserialize_vec(Short, int);
         } else if (in->val_type == VALUE_TYPE_INT32){
             fprintf(out, "    %s = ia.readInt();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT32_VEC){
@@ -328,7 +325,7 @@ static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_UINT32){
             fprintf(out, "    %s = ia.readInt();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_UINT32_VEC){
-            tp_gen_java_proto_impl_deserialize_vec(Int, int);
+            tp_gen_java_proto_impl_deserialize_vec(Int, long);
         } else if (in->val_type == VALUE_TYPE_INT64){
             fprintf(out, "    %s = ia.readLong();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT64_VEC){
@@ -356,7 +353,7 @@ static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_STR){
             fprintf(out, "    %s = ia.readString();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_STR_VEC){
-            tp_gen_java_proto_impl_deserialize_vec(String, string);
+            tp_gen_java_proto_impl_deserialize_vec(String, String);
         } else if (in->val_type == VALUE_TYPE_DOUBLE){
             fprintf(out, "    %s = ia.readDouble();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
@@ -370,7 +367,7 @@ static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
             tp_gen_java_proto_impl_deserialize_vec(Bool, bool);
         } else if (in->val_type == VALUE_TYPE_REF){
-            fprintf(out, "    %s.Deserialize(ia);\n", in->name);
+            fprintf(out, "    %s.deserialize(ia);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_REF_VEC){
             fprintf(out, "\n    // Read size firstly\n");
             fprintf(out, "    int %s_size = ia.readInt();\n", in->name);
@@ -378,8 +375,8 @@ static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
             fprintf(out, "    // Read element iteratively\n");
             fprintf(out, "    for(int i=0; i < %s_size; i++){\n", in->name);
             fprintf(out, "      %s refobj = new %s();\n", in->ref_type, in->ref_type);
-            fprintf(out, "      refobj.Deserialize(ia);\n");
-            fprintf(out, "      %s.add(refobj)\n", in->name);
+            fprintf(out, "      refobj.deserialize(ia);\n");
+            fprintf(out, "      %s.add(refobj);\n", in->name);
             fprintf(out, "    }\n\n");
         }
     }
@@ -389,8 +386,10 @@ static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
 static int tp_gen_java_import_path(FILE *out)
 {
     // Generate include files
-    fprintf(out, "\nimport java.util.List\n");
-    fprintf(out, "import java.util.ArrayList\n");
+    fprintf(out, "\nimport java.util.List;\n");
+    fprintf(out, "import java.util.ArrayList;\n");
+    fprintf(out, "import com.haska.tpbuff.*;\n");
+    fprintf(out, "import java.io.IOException;\n");
 
     return 0;
 }
@@ -430,7 +429,7 @@ static int tp_gen_java_proto_decl(const char *save_dir, struct protocol *p)
 
     // Generate file header
     fprintf(javafile, "/// Generated by tpp compiler. Don't edit!\n");
-    fprintf(javafile, "package com.haska.tpbuff;\n");
+    fprintf(javafile, "package com.haska.tpbuff.generated;\n");
 
     // Generate import file
     if (tp_gen_java_import_path(javafile) != 0){
