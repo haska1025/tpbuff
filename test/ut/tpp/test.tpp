@@ -7,6 +7,8 @@ protocol CloseConf
     protid CloseConfCMD=0x22;
     Conf cc_ref;
 
+    repeat Conf r_cc_ref;
+
     byte b1;
     repeat byte rb;
 

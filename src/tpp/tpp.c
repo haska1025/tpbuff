@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "tp_cxx_generator.h"
+#include "tp_java_generator.h"
 
 // The global variable definition
 int g_gen_struct = 0;
@@ -76,6 +77,7 @@ int main(int argc, char *argv[])
                 tp_gen_cxx_code(cpp_dir, argv[optind++]);
             }else if (generate_mode == 2){
                 // java
+                tp_gen_java_code(java_dir, argv[optind++]);
             }
         }
     }

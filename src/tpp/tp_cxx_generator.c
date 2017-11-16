@@ -22,46 +22,6 @@ extern int g_gen_struct;
         fprintf(out, "  void append_to_%s_vec(" #type " i){%s.push_back(i);}\n\n",in->name, in->name);\
     }while(0);
 
-static char * tp_toupper(const char *s)
-{
-    char *ns1, *ns2;
-    
-    ns1 = strdup(s);
-    ns2 = ns1;
-    while (*ns1){
-        if (*ns1 == '.'){
-            *ns1='_';
-        }else{
-            *ns1 = toupper(*ns1);
-        }
-        ns1++;
-    }
-
-    return ns2;
-}
-
-static char * tp_concat_path(const char *dir, const char *filename)
-{
-    char *tmp_dir = NULL;
-    int path_len, dir_len, filename_len;
-    
-    dir_len = strlen(dir);
-    filename_len = strlen(filename);
-
-    path_len = dir_len + filename_len + 2;
-    tmp_dir = malloc(path_len);
-    strncpy(tmp_dir, dir, dir_len);
-    if (dir[dir_len-1] != '/'){
-        tmp_dir[dir_len] = '/';
-        dir_len++;
-    }
-
-    strncpy(tmp_dir+dir_len, filename, filename_len);
-    tmp_dir[dir_len+filename_len] = '\0';
-    
-    return tmp_dir;
-}
-
 static int tp_gen_cxx_getter_setter(FILE *out, struct item_node *n)
 {
     struct item_node *in = n;

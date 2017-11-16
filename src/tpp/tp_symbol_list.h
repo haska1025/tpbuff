@@ -1,6 +1,9 @@
 #ifndef _TP_SYMBOL_LIST_H_
 #define _TP_SYMBOL_LIST_H_
 
+#include <string.h>
+#include <stdlib.h>
+
 enum value_type{
     VALUE_TYPE_BASE=8684,
     VALUE_TYPE_BYTE,//8685
@@ -80,6 +83,46 @@ struct inc_file
     struct inc_file *next;
     const char *filename;
 };
+
+static char * tp_toupper(const char *s)
+{
+    char *ns1, *ns2;
+    
+    ns1 = strdup(s);
+    ns2 = ns1;
+    while (*ns1){
+        if (*ns1 == '.'){
+            *ns1='_';
+        }else{
+            *ns1 = toupper(*ns1);
+        }
+        ns1++;
+    }
+
+    return ns2;
+}
+
+static char * tp_concat_path(const char *dir, const char *filename)
+{
+    char *tmp_dir = NULL;
+    int path_len, dir_len, filename_len;
+    
+    dir_len = strlen(dir);
+    filename_len = strlen(filename);
+
+    path_len = dir_len + filename_len + 2;
+    tmp_dir = malloc(path_len);
+    strncpy(tmp_dir, dir, dir_len);
+    if (dir[dir_len-1] != '/'){
+        tmp_dir[dir_len] = '/';
+        dir_len++;
+    }
+
+    strncpy(tmp_dir+dir_len, filename, filename_len);
+    tmp_dir[dir_len+filename_len] = '\0';
+    
+    return tmp_dir;
+}
 
 extern struct item_node * tpp_new_node(int val_type);
 extern struct item_node * tpp_new_ref_node(char *name, int val_type);
