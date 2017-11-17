@@ -5,6 +5,110 @@
 #include "tp_java_generator.h"
 #include "tp_symbol_list.h"
 
+#define tp_gen_java_proto_impl_dump_format(fmt) \
+    do{\
+        fprintf(out, "    System.out.printf(\"%s = %" fmt "\", %s).println();\n", in->name, in->name);\
+    }while(0);
+
+#define tp_gen_java_proto_impl_dump_vec_format(fmt) \
+    do{\
+        fprintf(out, "    int %ssize = %s.length;\n", in->name, in->name);\
+        fprintf(out, "    // Write element iteratively\n");\
+        fprintf(out, "    for(int i=0; i < %ssize; i++){\n", in->name);\
+        fprintf(out, "      System.out.printf(\"%s[%%d] = %" fmt "\",i, %s[i]).println();\n", in->name, in->name);\
+        fprintf(out, "    }\n\n");\
+    }while(0);
+
+static int tp_gen_java_proto_impl_dump(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+    fprintf(out, "  public void dump(){\n");
+    in = p->head;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_BYTE){
+            tp_gen_java_proto_impl_dump_format("%x");
+        } else if (in->val_type == VALUE_TYPE_BYTE_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%x");
+        } else if (in->val_type == VALUE_TYPE_INT8){
+            tp_gen_java_proto_impl_dump_format("%x");
+        } else if (in->val_type == VALUE_TYPE_INT8_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%x");
+        } else if (in->val_type == VALUE_TYPE_UINT8){
+            tp_gen_java_proto_impl_dump_format("%x");
+        } else if (in->val_type == VALUE_TYPE_UINT8_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%x");
+        } else if (in->val_type == VALUE_TYPE_INT16){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_INT16_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_UINT16){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_UINT16_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_INT32){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_INT32_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_UINT32){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_UINT32_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_INT64){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_INT64_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_UINT64){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_UINT64_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_INT){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_INT_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_SHORT){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_SHORT_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_LONG){
+            tp_gen_java_proto_impl_dump_format("%d");
+        } else if (in->val_type == VALUE_TYPE_LONG_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%d");
+        } else if (in->val_type == VALUE_TYPE_CHAR){
+            tp_gen_java_proto_impl_dump_format("%c");
+        } else if (in->val_type == VALUE_TYPE_CHAR_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%c");
+        } else if (in->val_type == VALUE_TYPE_STR){
+            tp_gen_java_proto_impl_dump_format("%s");
+        } else if (in->val_type == VALUE_TYPE_STR_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%s");
+        } else if (in->val_type == VALUE_TYPE_DOUBLE){
+            tp_gen_java_proto_impl_dump_format("%f");
+        } else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%f");
+        } else if (in->val_type == VALUE_TYPE_FLOAT){
+            tp_gen_java_proto_impl_dump_format("%f");
+        } else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%f");
+        } else if (in->val_type == VALUE_TYPE_BOOL){
+            tp_gen_java_proto_impl_dump_format("%s");
+        } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
+            tp_gen_java_proto_impl_dump_vec_format("%s");
+        } else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "    %s.dump();\n", in->name);
+        } else if (in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "\n  // Read size firstly\n");
+            fprintf(out, "    int %ssize = %s.size();\n", in->name, in->name);
+            fprintf(out, "    // Read element iteratively\n");
+            fprintf(out, "    for(int i=0; i < %ssize; i++){\n", in->name);
+            fprintf(out, "      %s.get(i).dump();\n", in->name);
+            fprintf(out, "    }\n\n");
+        }
+    }
+    fprintf(out, "  }\n");
+
+    return 0;
+}
+
 #define tp_gen_java_getter_setter_type(type) \
     do {\
         fprintf(out, "  public " #type " get%c%s(){return %s;}\n", toupper(in->name[0]), (in->name+1), in->name);\
@@ -367,6 +471,7 @@ static int tp_gen_java_proto_impl_deserialize(FILE *out, struct protocol *p)
         } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
             tp_gen_java_proto_impl_deserialize_vec(Bool, bool);
         } else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "    if(%s==null) %s = new %s();\n", in->name, in->name, in->ref_type);
             fprintf(out, "    %s.deserialize(ia);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_REF_VEC){
             fprintf(out, "\n    // Read size firstly\n");
@@ -439,13 +544,14 @@ static int tp_gen_java_proto_decl(const char *save_dir, struct protocol *p)
     }
 
     //Generate class header
-    fprintf(javafile, "public class %s implements Command {\n", p->name);
+    fprintf(javafile, "public class %s extends CommandHeader implements Command {\n", p->name);
     tp_gen_java_data_member(javafile, p->head);
     tp_gen_java_getter_setter(javafile, p->head);
     fprintf(javafile, "\n  // constructor\n");
     fprintf(javafile, "  public %s(){\n  }\n", p->name);
     tp_gen_java_proto_impl_serialize(javafile, p);
     tp_gen_java_proto_impl_deserialize(javafile, p);
+    tp_gen_java_proto_impl_dump(javafile, p);
     fprintf(javafile, "}\n\n");
 
     return 0;
