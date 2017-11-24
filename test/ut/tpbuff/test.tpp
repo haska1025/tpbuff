@@ -1,7 +1,17 @@
+package tpp_cxx;
+
+import conf_common.tpp;
+
 protocol Conf
 { 
+    // the i8
+    // comment2
     int8 i8; 
+    conference_info ci;
 };
+
+// comment
+// comment
 protocol CloseConf
 {
     protid CMD_CLOSE_CONFERENCE = 0x22;

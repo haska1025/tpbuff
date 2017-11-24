@@ -10,9 +10,9 @@ class InputArchive;
 struct CommandHeader
 { 
     uint32_t version; 
-    uint32_t message_type; 
+    uint32_t cmdID; 
     uint32_t userID; 
-    uint32_t sequenceNo;    /// not timestamp 
+    uint32_t timestamp;    /// not timestamp 
 };
 
 class Command
@@ -25,14 +25,28 @@ public:
     // Return the size of the object
     virtual int ByteSize()=0;
 
-    uint32_t getServiceType() const {return header.message_type>>16; }
-    void setServiceType(uint32_t st) { header.message_type = (header.message_type & 0xffff) | (st<<16); }
+    //retain for business
+    uint32_t getServiceType() const {return header.cmdID>>16; }
+    void setServiceType(uint32_t st) { header.cmdID = (header.cmdID & 0xffff) | (st<<16); }
 
-    uint32_t getMsgId() const {return header.message_type & 0xffff; }
-    void setMsgId(uint32_t id) { header.message_type = (header.message_type & 0xffff0000) | id; }
+    uint32_t getMsgId() const {return header.cmdID & 0xffff; }
+    void setMsgId(uint32_t id) { header.cmdID = (header.cmdID & 0xffff0000) | id; }
 
-    uint32_t cmdID() const { return header.message_type; }
-	void setCmdID(uint32_t id) { header.message_type = id; }
+    uint32_t cmdID() const { return header.cmdID; }
+	void setCmdID(uint32_t id) { header.cmdID = id; }
+
+    //read and write command header
+    uint32_t GetVersion() const { return header.version; }
+    void SetVersion(uint32_t version) { header.version = version; }
+
+    uint32_t GetCommandID() const { return header.cmdID; }
+    void SetCommandID(uint32_t cmd_id) { header.cmdID = cmd_id; }
+
+    uint32_t GetUserID() const { return header.userID; }
+    void SetUserID(uint32_t user_id) { header.userID = user_id; }
+
+    uint32_t GetTimestamp() const { return header.timestamp; }
+    void SetTimestamp(uint32_t timestamp) { header.timestamp = timestamp; }
 
     // Keep public property 
     CommandHeader   header;

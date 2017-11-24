@@ -23,6 +23,7 @@ public:
     virtual bool readUInt32(uint32_t &v) = 0;
     virtual bool readUInt64(uint64_t &v) = 0;
 
+    virtual bool readBool(bool &v) = 0;
     virtual bool readChar(char &v) = 0;
     virtual bool readShort(short &v) = 0;
     virtual bool readInt(int &v) = 0;

@@ -12,6 +12,7 @@ Arch_Serialize_Def(uint64_t);
 Arch_Serialize_Def(int64_t);
 Arch_Serialize_Def(uint8_t);
 Arch_Serialize_Def(int8_t);
+Arch_Serialize_Def(bool);
 Arch_Serialize_Def(uint16_t);
 Arch_Serialize_Def(int16_t);
 Arch_Serialize_Def(uint32_t);
@@ -90,7 +91,10 @@ bool BinArchive::writeStr(std::string &s)
 {
     return ::serialize(*this, s);
 }
-
+bool BinArchive::writeBool(bool i)
+{
+    return ::serialize(*this, i);
+}
 bool BinArchive::writeChar(char c)
 {
     return ::serialize(*this, c);
@@ -116,6 +120,7 @@ bool serialize(BinDearchive& dearch, Type& v) {	return dearch.serialize(&v, size
 
 Dearch_Serialize_Def(float);
 Dearch_Serialize_Def(double);
+Dearch_Serialize_Def(bool);
 Dearch_Serialize_Def(uint64_t);
 Dearch_Serialize_Def(int64_t);
 Dearch_Serialize_Def(uint8_t);
@@ -196,7 +201,10 @@ bool BinDearchive::readUInt64(uint64_t &v)
 {
     return ::serialize(*this, v);
 }
-
+bool BinDearchive::readBool(bool &v)
+{
+    return ::serialize(*this, v);
+}
 bool BinDearchive::readChar(char &v)
 {
     int8_t i;

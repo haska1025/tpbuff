@@ -9,15 +9,13 @@ Package: tpbuff
 Section: unknown
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Description: The tang tpbuff develop package and tang protocol parser. 
 
 Package: tpbuff-dbg
 Section: devel
 Architecture: any
 Depends: tpbuff (= ${Source-Version})
 Description: Debug symbol files for tpbuff
- <insert long description, indented with spaces>
 
 #Package: tpbuff-doc
 #Section: document
@@ -30,4 +28,3 @@ Section: devel
 Architecture: any
 Depends: tpbuff (= ${Source-Version})
 Description: Develop package for tpbuff
- <insert long description, indented with spaces>

@@ -24,6 +24,7 @@ public:
     virtual bool writeDouble(double d) = 0;
     virtual bool writeFloat(float f) = 0;
 
+    virtual bool writeBool(bool i) = 0;
     virtual bool writeChar(char c) = 0;
     virtual bool writeShort(short s) = 0;
     virtual bool writeInt(int i) = 0;

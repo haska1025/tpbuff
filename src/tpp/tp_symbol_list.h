@@ -46,6 +46,22 @@ enum value_type{
     VALUE_TYPE_PROTID_HEX, //8722
 };
 
+struct symbol {
+    const char *name;
+    struct ref *reflist;
+};
+/* a word */
+struct ref {
+    struct ref *next;
+    const char *filename;
+    int flags;
+    int lineno;
+};
+
+struct symbol *lookup(char*);
+void addref(int, const char*, char*,int);
+void printrefs();
+
 struct item_node
 {
     struct item_node *next;
@@ -82,20 +98,46 @@ struct inc_file
 {
     struct inc_file *next;
     const char *filename;
+    int is_quote;
 };
 
-static char * tp_toupper(const char *s)
+struct generated_file
+{
+    char *packagename;
+    const char *filename;
+    struct generated_file *next;
+
+    /** link the include file */
+    struct inc_file *incfile_head;
+    struct inc_file *incfile_tail;
+    /** link the protocol */
+    struct protocol *proto_tab_head;
+    struct protocol *proto_tab_tail;
+};
+
+static char * tp_replace_x_with_y(char *s, char x, char y)
 {
     char *ns1, *ns2;
     
-    ns1 = strdup(s);
+    ns1 = s;
     ns2 = ns1;
     while (*ns1){
-        if (*ns1 == '.'){
-            *ns1='_';
-        }else{
-            *ns1 = toupper(*ns1);
+        if (*ns1 == x){
+            *ns1=y;
         }
+        ns1++;
+    }
+
+    return ns2;
+}
+static char * tp_toupper(char *s)
+{
+    char *ns1, *ns2;
+    
+    ns1 = s;
+    ns2 = ns1;
+    while (*ns1){
+        *ns1 = toupper(*ns1);
         ns1++;
     }
 
@@ -134,14 +176,27 @@ extern struct protocol * tpp_item_list_add_node(struct protocol *p , struct item
 
 extern struct protocol * tpp_protocol_new(struct item_node *node);
 extern struct protocol * tpp_protocol_set_name(struct protocol *p , char *name);
-extern struct protocol * tpp_protocol_tab_get();
+
+extern int tpp_protocol_parse(const char *file_name);
+
 extern struct protocol * tpp_protocol_get(const char *protoname);
 extern void tpp_protocol_tab_add(struct protocol *p);
-extern int tpp_protocol_parse(const char *file_name);
-extern void tpp_display_protocol_table();
-extern void tpp_protocol_tab_destroy();
 
-extern struct inc_file * tpp_get_inc_file();
-extern void tpp_destroy_inc_file();
+extern struct protocol * tpp_protocol_tab_get(struct generated_file *gfile);
+extern void tpp_display_protocol_table(struct generated_file *gfile);
+extern void tpp_protocol_tab_destroy(struct generated_file *gfile);
+
+extern struct inc_file * tpp_get_inc_file(struct generated_file *gfile);
+extern void tpp_destroy_inc_file(struct generated_file *gfile);
+extern void tpp_add_inc_file_node(const char *filename, int is_quote);
+
+extern void tpp_set_package_name(char *name);
+
+extern char *tpp_get_package_name_by_filename(const char *filename);
+extern char * tpp_get_package_name(struct generated_file *gfile);
+extern struct generated_file * tpp_gfile_new(const char *filename);
+extern void tpp_gfile_add(struct generated_file *gfile);
+extern struct generated_file * tpp_gfile_get_list();
+extern void tpp_gfile_destroy_list();
 #endif//_TP_SYMBOL_LIST_H_
 

@@ -1,7 +1,21 @@
+package com.haska.tpp;
+
+import common.tpp;
+import common1.tpp;
+
+// c++ comment
+
+/**** ================+++++++++++++++++++++
+ **
+ * multiple line comment 
+ */
 protocol Conf {
     protid ConfCMD=0XAfe8;
+    common_message cm;
+    common1_message cm1;
     int8 i8;
 };
+
 protocol CloseConf
 {
     protid CloseConfCMD=0x22;

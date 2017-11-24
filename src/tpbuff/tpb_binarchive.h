@@ -128,6 +128,7 @@ public:
     virtual bool writeDouble(double d);
     virtual bool writeFloat(float f);
 
+    virtual bool writeBool(bool i);
     virtual bool writeChar(char c);
     virtual bool writeShort(short s);
     virtual bool writeInt(int i);
@@ -326,6 +327,7 @@ public:
     virtual bool readUInt32(uint32_t &v);
     virtual bool readUInt64(uint64_t &v);
 
+    virtual bool readBool(bool &v);
     virtual bool readChar(char &v);
     virtual bool readShort(short &v);
     virtual bool readInt(int &v);

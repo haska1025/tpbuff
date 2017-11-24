@@ -5,7 +5,9 @@
 #include "tp_symbol_list.h"
 
 void tpperror(char *s, ...);
-
+void addref(int, const char*, char*,int);
+extern const char *curfilename;
+extern int tpplineno;
 //#define YYDEBUG 1
 //int yydebug = 1;
 %}
@@ -30,12 +32,18 @@ void tpperror(char *s, ...);
 %token PROTOCOL
 %token REPEAT
 %token PROTID
-%token <intval> '{' '}' ';' '(' ')' '='
+%token IMPORT
+%token PACKAGE
+%token <intval> '{' '}' ';' '(' ')' '=' '.'
 
 %type <node_ptr> col_definition 
 %type <prtc_ptr> def_col_list
 %type <prtc_ptr> def_cmd_stmt
 %type <node_ptr> def_type
+%type <strval> pkg_name
+%type <strval> iddot_list 
+%type <strval> iddot
+
 
 %start stmt_list
 
@@ -44,10 +52,47 @@ stmt_list:stmt ';'
 | stmt_list stmt ';'
 ;
 
+stmt: pkg_stmt
+;
+
+pkg_stmt: PACKAGE pkg_name{ tpp_set_package_name($2);}
+;
+
+pkg_name: ID { $$ = $1;}
+| iddot_list ID {
+    char *pkgname = malloc(strlen($1) + strlen($2)+ 1);
+    strcpy(pkgname, $1);
+    strcat(pkgname, $2);
+    free($1);
+    free($2);
+    $$ = pkgname;
+}
+;
+
+iddot_list: iddot {$$ = $1;}
+| iddot_list iddot {
+    char *pkgname = malloc(strlen($1) + strlen($2) + 1);
+    strcpy(pkgname, $1);
+    strcat(pkgname, $2);
+    free($1);
+    free($2);
+    $$ = pkgname;
+}
+;
+
+iddot: ID '.' {
+           char *pkgname = malloc(strlen($1) + 2);
+           strcpy(pkgname, $1);
+           strcat(pkgname, ".");
+           free($1);
+           $$ = pkgname;
+       }
+;
+
 stmt: def_cmd_stmt {tpp_protocol_tab_add($1);}
 ;
 
-def_cmd_stmt:PROTOCOL ID '{' def_col_list '}'    { $$ = tpp_protocol_set_name($4,$2); }
+def_cmd_stmt:PROTOCOL ID '{' def_col_list '}'    { addref(tpplineno, curfilename, $2, 1); $$ = tpp_protocol_set_name($4,$2); }
 ;
 def_col_list:col_definition   { $$ = tpp_protocol_new($1);}
 | def_col_list col_definition { $$ = tpp_item_list_add_node($1 , $2);}
@@ -100,7 +145,6 @@ def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
 void
 tpperror(char *s, ...)
 {
-    extern int tpplineno;
     va_list ap;
     va_start(ap, s);
 
