@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
 
 #include "test.tpp.h"
 #include "tpb_binarchive.h"
@@ -99,8 +100,29 @@ int main()
         fprintf(stderr, "Deserialize failed!\n");
     }
 
-    de_cc.dump();
+    std::ostringstream os;
+    de_cc.dump(os);
+    fprintf(stdout, "%s", os.str().c_str());
 
+{
+    PageInfo pageinfo;
+    pageinfo.set_pageNo(1) ;
+    pageinfo.set_roate(0) ;
+    pageinfo.set_url("");
+
+    char buff[4096];
+    BinArchive ba(buff, 4096);
+    if (!pageinfo.Serialize(&ba)){
+         fprintf(stderr, "Serialize failed!\n");
+    }
+    fprintf(stdout,"pageinfo:\n"); 
+     for (unsigned int i=0; i < ba.dataLen();){
+         fprintf(stdout, "%02x ", (unsigned char)buff[i]);
+         i++;
+         if (i%4 == 0)
+             fprintf(stdout, "\n");
+    }
+}
     return 0;
 }
 

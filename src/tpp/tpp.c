@@ -7,6 +7,7 @@
 
 // The global variable definition
 int g_gen_struct = 0;
+int g_reg_cmd = 1;
 
 void usage()
 {
@@ -15,6 +16,7 @@ void usage()
     fprintf(stderr, "  --cppout=DIR          Generate cplusplus code, The DIR is used to save files.\n");
     fprintf(stderr, "  --javaout=DIR         Generate java code, The DIR is used to save files.\n");
     fprintf(stderr, "  --struct -s           Generate struct message which doesn't has getter/setter method.\n");
+    fprintf(stderr, "  --no-register -n      Generate register command code.\n");
     exit(0);
 }
 
@@ -24,6 +26,7 @@ int main(int argc, char *argv[])
     // --cppout <dir> 
     // --javaout <dir>
     // --struct
+    // --no-register
 
     int c;
     // 1: cpp, 2: java
@@ -43,10 +46,11 @@ int main(int argc, char *argv[])
             {"cppout",  required_argument, 0,  1 },
             {"javaout", required_argument, 0,  2 },
             {"struct",  no_argument,       0, 's'},
+            {"no-register",no_argument,       0, 'n'},
             {0,         0,                 0,  0 }
         };
 
-        c = getopt_long(argc, argv, "hs", long_options, &option_index);
+        c = getopt_long(argc, argv, "hsn", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -56,6 +60,9 @@ int main(int argc, char *argv[])
                 break;
             case 's':
                 g_gen_struct = 1;
+                break;
+            case 'n':
+                g_reg_cmd = 0;
                 break;
             case 1:
                 cpp_dir = optarg;

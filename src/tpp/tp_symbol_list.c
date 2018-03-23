@@ -161,6 +161,15 @@ struct item_node * tpp_new_node(int val_type)
     return node;
 }
 
+struct item_node * tpp_new_vec_node(int val_type, int veclenbytes)
+{
+    struct item_node *node = NULL;
+    node = tpp_new_node(val_type);
+    if (node){
+        node->val_len = veclenbytes;
+    }
+    return node;
+}
 struct item_node * tpp_new_ref_node(char *name, int val_type)
 {
     struct item_node *node = NULL;

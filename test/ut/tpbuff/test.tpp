@@ -66,5 +66,14 @@ protocol CloseConf
 
     long lvalue;
     repeat long rl;
+    repeat(1) int onei;
+    repeat(2) int twoi;
+    repeat(4) int fouri;
+    repeat(8) int eighti;
 };
 
+protocol PageInfo{
+    uint16 pageNo;
+    uint16 roate;
+    string url;
+};

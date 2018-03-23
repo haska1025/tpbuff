@@ -8,7 +8,34 @@
 #include "tp_symbol_list.h"
 
 extern int g_gen_struct;
+extern int g_reg_cmd;
 
+static const char *tp_gen_cxx_get_inttypestr_by_size(int size)
+{
+    if (size <= 1){
+        return "int8_t";
+    }else if (size <= 2){
+        return "int16_t";
+    }else if (size <= 4){
+        return "int32_t";
+    }else if (size <= 8){
+        return "int64_t";
+    }
+    return "int32_t";
+}
+static const char *tp_gen_cxx_get_intfunstr_by_size(int size)
+{
+    if (size <= 1){
+        return "Int8";
+    }else if (size <= 2){
+        return "Int16";
+    }else if (size <= 4){
+        return "Int32";
+    }else if (size <= 8){
+        return "Int64";
+    }
+    return "Int32";
+}
 #define tp_gen_cxx_getter_setter_type(type) \
     do {\
         fprintf(out, "  " #type " get_%s(){return %s;}\n", in->name, in->name);\
@@ -222,7 +249,7 @@ static int tp_gen_cxx_proto_decl(FILE *out, struct protocol *p)
     fprintf(out, "  virtual bool Deserialize(InputArchive *ia);\n");
     fprintf(out, "  // Return the size of the object\n");
     fprintf(out, "  virtual int ByteSize();\n");
-    fprintf(out, "  void dump();\n");
+    fprintf(out, "  void dump(std::ostream &os);\n");
     if (!g_gen_struct){
         tp_gen_cxx_getter_setter(out, p->head);
     }
@@ -260,10 +287,18 @@ static void tp_gen_cxx_proto_impl_ctor(FILE *out, struct protocol *p)
     fprintf(out, "  if (&tpp_from != this){\n");
     fprintf(out, "    CopyFrom(tpp_from);\n");
     fprintf(out, "  }\n");
-    fprintf(out, "  return *this;");
+    fprintf(out, "  return *this;\n");
     fprintf(out, "}\n");
     // Generate shared ctor
     fprintf(out, "void %s::SharedCtor()\n{\n", p->name);
+    in = p->head;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_PROTID_INT){
+            fprintf(out, "  SetCommandID(%d);\n", in->value.int_val);
+        }else if (in->val_type == VALUE_TYPE_PROTID_HEX){
+            fprintf(out, "  SetCommandID(%s);\n", in->value.str_val);
+        }
+    }
     in = p->head;
     for (; in != NULL; in=in->next){
         if (in->val_type == VALUE_TYPE_BYTE
@@ -314,6 +349,7 @@ static void tp_gen_cxx_proto_impl_ctor(FILE *out, struct protocol *p)
             fprintf(out, "  %s = tpp_from.%s;\n", in->name, in->name); 
         }
     }
+    fprintf(out, "  SetHeader(tpp_from.GetHeader());\n");
     fprintf(out, "}\n");
 }
 
@@ -364,8 +400,8 @@ static void tp_gen_cxx_proto_impl_ref(FILE *out, struct protocol *p)
 #define tp_gen_cxx_proto_impl_serialize_vec(type) \
     do{\
         fprintf(out, "\n  // Write size firstly\n");\
-        fprintf(out, "  int %ssize = %s.size();\n", in->name, in->name);\
-        fprintf(out, "  tpp_rc=!tpp_rc? tpp_rc: oa->writeInt32(%ssize);\n", in->name);\
+        fprintf(out, "  %s %ssize = %s.size();\n", tp_gen_cxx_get_inttypestr_by_size(in->val_len), in->name, in->name);\
+        fprintf(out, "  tpp_rc=!tpp_rc? tpp_rc: oa->write%s(%ssize);\n", tp_gen_cxx_get_intfunstr_by_size(in->val_len), in->name);\
         fprintf(out, "  // Write element iteratively\n");\
         fprintf(out, "  for(int i=0; i < %ssize; i++){\n", in->name);\
         fprintf(out, "    tpp_rc=!tpp_rc? tpp_rc: oa->write" #type "(%s[i]);\n", in->name);\
@@ -375,8 +411,8 @@ static void tp_gen_cxx_proto_impl_ref(FILE *out, struct protocol *p)
 #define tp_gen_cxx_proto_impl_deserialize_vec(type, datatype) \
     do{\
         fprintf(out, "\n  // Read size firstly\n");\
-        fprintf(out, "  int %ssize = 0;\n", in->name);\
-        fprintf(out, "  tpp_rc = !tpp_rc? tpp_rc : ia->readInt32(%ssize);\n", in->name);\
+        fprintf(out, "  %s %ssize = 0;\n", tp_gen_cxx_get_inttypestr_by_size(in->val_len), in->name);\
+        fprintf(out, "  tpp_rc = !tpp_rc? tpp_rc : ia->read%s(%ssize);\n", tp_gen_cxx_get_intfunstr_by_size(in->val_len), in->name);\
         fprintf(out, "  // Read element iteratively\n");\
         fprintf(out, "  for(int i=0; i < %ssize; i++){\n", in->name);\
         fprintf(out, "    " #datatype " tmp;\n");\
@@ -599,42 +635,56 @@ static int tp_gen_cxx_proto_impl_bytesize(FILE *out, struct protocol *p)
                 || in->val_type == VALUE_TYPE_FLOAT
                 || in->val_type == VALUE_TYPE_BOOL){
             fprintf(out, "  totalsize += sizeof(%s);\n", in->name);
-        }else if (in->val_type == VALUE_TYPE_BYTE_VEC
+        } else if (in->val_type == VALUE_TYPE_BYTE_VEC
                 || in->val_type == VALUE_TYPE_INT8_VEC
                 || in->val_type == VALUE_TYPE_BOOL_VEC
                 || in->val_type == VALUE_TYPE_UINT8_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(uint8_t)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT16_VEC
                 || in->val_type == VALUE_TYPE_UINT16_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(uint16_t)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT32_VEC
                 || in->val_type == VALUE_TYPE_UINT32_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(uint32_t)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT64_VEC
                 || in->val_type == VALUE_TYPE_UINT64_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(uint64_t)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_INT_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(int)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_SHORT_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(short)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_LONG_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(long)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_CHAR_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(char)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_STR){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += %s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_STR_VEC){
-            fprintf(out, "  for (int i=0; i < %s.size();i++){\n", in->name);
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
+            fprintf(out, "  for (int i=0; i < (int)%s.size();i++){\n", in->name);
+            fprintf(out, "    totalsize += sizeof(uint32_t);\n");
             fprintf(out, "    totalsize += %s[i].size();\n", in->name);
             fprintf(out, "  }\n");
         } else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(double)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
             fprintf(out, "  totalsize += sizeof(float)*%s.size();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_REF){
             fprintf(out, "  totalsize += %s.ByteSize();\n", in->name);
         } else if (in->val_type == VALUE_TYPE_REF_VEC){
-            fprintf(out, "  for (int i=0; i < %s.size();i++){\n", in->name);
+            fprintf(out, "  totalsize += sizeof(uint32_t);\n");
+            fprintf(out, "  for (int i=0; i < (int)%s.size();i++){\n", in->name);
             fprintf(out, "    totalsize += %s[i].ByteSize();\n", in->name);
             fprintf(out, "  }\n");
         }
@@ -645,107 +695,71 @@ static int tp_gen_cxx_proto_impl_bytesize(FILE *out, struct protocol *p)
     return 0;
 }
 
-#define tp_gen_cxx_proto_impl_dump_format(fmt) \
+#define tp_gen_cxx_proto_impl_dump_format() \
     do{\
-        fprintf(out, "  fprintf(stdout, \"%s = %" fmt "\\n\", %s);\n", in->name, in->name);\
+        fprintf(out, "  os << \"%s = \" << %s << std::endl;\n", in->name, in->name);\
     }while(0);
 
-#define tp_gen_cxx_proto_impl_dump_vec_format(fmt) \
+#define tp_gen_cxx_proto_impl_dump_vec_format() \
     do{\
         fprintf(out, "  int %ssize = %s.size();\n", in->name, in->name);\
         fprintf(out, "  // Write element iteratively\n");\
         fprintf(out, "  for(int i=0; i < %ssize; i++){\n", in->name);\
-        fprintf(out, "    fprintf(stdout, \"%svec[%%d] = %" fmt "\\n\",i, %s[i]);\n", in->name, in->name);\
+        fprintf(out, "    os << \"%svec[\" << i << \"] = \" << %s[i] << std::endl;\n", in->name, in->name);\
         fprintf(out, "  }\n\n");\
     }while(0);
 
 static int tp_gen_cxx_proto_impl_dump(FILE *out, struct protocol *p)
 {
     struct item_node *in = NULL;
-    fprintf(out, "void %s::dump()\n{\n", p->name);
+    fprintf(out, "void %s::dump(std::ostream &os)\n{\n", p->name);
     in = p->head;
     for (; in != NULL; in=in->next){
-        if (in->val_type == VALUE_TYPE_BYTE){
-            tp_gen_cxx_proto_impl_dump_format("%u");
-        } else if (in->val_type == VALUE_TYPE_BYTE_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%u");
-        } else if (in->val_type == VALUE_TYPE_INT8){
-            tp_gen_cxx_proto_impl_dump_format("%d");
-        } else if (in->val_type == VALUE_TYPE_INT8_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%d");
-        } else if (in->val_type == VALUE_TYPE_UINT8){
-            tp_gen_cxx_proto_impl_dump_format("%u");
-        } else if (in->val_type == VALUE_TYPE_UINT8_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%u");
-        } else if (in->val_type == VALUE_TYPE_INT16){
-            tp_gen_cxx_proto_impl_dump_format("%d");
-        } else if (in->val_type == VALUE_TYPE_INT16_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%d");
-        } else if (in->val_type == VALUE_TYPE_UINT16){
-            tp_gen_cxx_proto_impl_dump_format("%u");
-        } else if (in->val_type == VALUE_TYPE_UINT16_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%u");
-        } else if (in->val_type == VALUE_TYPE_INT32){
-            tp_gen_cxx_proto_impl_dump_format("%d");
-        } else if (in->val_type == VALUE_TYPE_INT32_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%d");
-        } else if (in->val_type == VALUE_TYPE_UINT32){
-            tp_gen_cxx_proto_impl_dump_format("%u");
-        } else if (in->val_type == VALUE_TYPE_UINT32_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%u");
-        } else if (in->val_type == VALUE_TYPE_INT64){
-            tp_gen_cxx_proto_impl_dump_format("%" PRId64);
-        } else if (in->val_type == VALUE_TYPE_INT64_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%" PRId64);
-        } else if (in->val_type == VALUE_TYPE_UINT64){
-            tp_gen_cxx_proto_impl_dump_format("%" PRIu64);
-        } else if (in->val_type == VALUE_TYPE_UINT64_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%" PRIu64);
-        } else if (in->val_type == VALUE_TYPE_INT){
-            tp_gen_cxx_proto_impl_dump_format("%d");
-        } else if (in->val_type == VALUE_TYPE_INT_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%d");
-        } else if (in->val_type == VALUE_TYPE_SHORT){
-            tp_gen_cxx_proto_impl_dump_format("%d");
-        } else if (in->val_type == VALUE_TYPE_SHORT_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%d");
-        } else if (in->val_type == VALUE_TYPE_LONG){
-            tp_gen_cxx_proto_impl_dump_format("%ld");
-        } else if (in->val_type == VALUE_TYPE_LONG_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%ld");
-        } else if (in->val_type == VALUE_TYPE_CHAR){
-            tp_gen_cxx_proto_impl_dump_format("%c");
-        } else if (in->val_type == VALUE_TYPE_CHAR_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%c");
-        } else if (in->val_type == VALUE_TYPE_STR){
-            fprintf(out, "  fprintf(stdout, \"%s = %%s\\n\", %s.c_str());\n", in->name, in->name);
-        } else if (in->val_type == VALUE_TYPE_STR_VEC){
-            fprintf(out, "\n  // Read size firstly\n");
-            fprintf(out, "  int %ssize = %s.size();\n", in->name, in->name);
-            fprintf(out, "  // Read element iteratively\n");
-            fprintf(out, "  for(int i=0; i < %ssize; i++){\n", in->name);
-            fprintf(out, "    fprintf(stdout, \"%svec[%%d] = %%s\\n\", i, %s[i].c_str());\n", in->name, in->name);
-            fprintf(out, "  }\n\n");
-        } else if (in->val_type == VALUE_TYPE_DOUBLE){
-            tp_gen_cxx_proto_impl_dump_format("%f");
-        } else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%f");
-        } else if (in->val_type == VALUE_TYPE_FLOAT){
-            tp_gen_cxx_proto_impl_dump_format("%f");
-        } else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%f");
-        } else if (in->val_type == VALUE_TYPE_BOOL){
-            tp_gen_cxx_proto_impl_dump_format("%d");
-        } else if (in->val_type == VALUE_TYPE_BOOL_VEC){
-            tp_gen_cxx_proto_impl_dump_vec_format("%d");
+        if (in->val_type == VALUE_TYPE_BYTE
+                || in->val_type == VALUE_TYPE_INT8
+                || in->val_type == VALUE_TYPE_UINT8){
+            fprintf(out, "  os << \"%s = \" << (unsigned int)%s << std::endl;\n", in->name, in->name);
+        }else if(in->val_type == VALUE_TYPE_INT16
+                || in->val_type == VALUE_TYPE_UINT16
+                || in->val_type == VALUE_TYPE_INT32
+                || in->val_type == VALUE_TYPE_UINT32
+                || in->val_type == VALUE_TYPE_INT64
+                || in->val_type == VALUE_TYPE_UINT64
+                || in->val_type == VALUE_TYPE_INT
+                || in->val_type == VALUE_TYPE_SHORT
+                || in->val_type == VALUE_TYPE_LONG
+                || in->val_type == VALUE_TYPE_CHAR
+                || in->val_type == VALUE_TYPE_DOUBLE
+                || in->val_type == VALUE_TYPE_FLOAT
+                || in->val_type == VALUE_TYPE_STR
+                || in->val_type == VALUE_TYPE_BOOL){
+            tp_gen_cxx_proto_impl_dump_format();       
+        } else if (in->val_type == VALUE_TYPE_BYTE_VEC
+                || in->val_type == VALUE_TYPE_INT8_VEC
+                || in->val_type == VALUE_TYPE_UINT8_VEC
+                || in->val_type == VALUE_TYPE_INT16_VEC
+                || in->val_type == VALUE_TYPE_UINT16_VEC
+                || in->val_type == VALUE_TYPE_INT32_VEC
+                || in->val_type == VALUE_TYPE_UINT32_VEC
+                || in->val_type == VALUE_TYPE_INT64_VEC
+                || in->val_type == VALUE_TYPE_UINT64_VEC
+                || in->val_type == VALUE_TYPE_INT_VEC 
+                || in->val_type == VALUE_TYPE_SHORT_VEC
+                || in->val_type == VALUE_TYPE_LONG_VEC
+                || in->val_type == VALUE_TYPE_DOUBLE_VEC
+                || in->val_type == VALUE_TYPE_FLOAT_VEC
+                || in->val_type == VALUE_TYPE_BOOL_VEC
+                || in->val_type == VALUE_TYPE_CHAR_VEC
+                || in->val_type == VALUE_TYPE_STR_VEC){
+            tp_gen_cxx_proto_impl_dump_vec_format();
         } else if (in->val_type == VALUE_TYPE_REF){
-            fprintf(out, "  %s.dump();\n", in->name);
+            fprintf(out, "  %s.dump(os);\n", in->name);
         } else if (in->val_type == VALUE_TYPE_REF_VEC){
             fprintf(out, "\n  // Read size firstly\n");
             fprintf(out, "  int %ssize = %s.size();\n", in->name, in->name);
             fprintf(out, "  // Read element iteratively\n");
             fprintf(out, "  for(int i=0; i < %ssize; i++){\n", in->name);
-            fprintf(out, "    %s[i].dump();\n", in->name);
+            fprintf(out, "    %s[i].dump(os);\n", in->name);
             fprintf(out, "  }\n\n");
         }
     }
@@ -766,6 +780,20 @@ static int tp_gen_cxx_proto_impl_register_cmd(FILE *out, struct protocol *p)
             }
         }
     }
+    return 0;
+}
+static int tp_gen_cxx_proto_has_protid(struct protocol *proto)
+{
+	struct protocol *cur_p = NULL;
+	for (cur_p = proto; cur_p != NULL; cur_p = cur_p->next) {
+		struct item_node *in = cur_p->head;
+		for (; in != NULL; in = in->next) {
+			if (in->val_type == VALUE_TYPE_PROTID_INT
+				|| in->val_type == VALUE_TYPE_PROTID_HEX) {
+				return 1;
+			}
+		}
+	}
     return 0;
 }
 static int tp_gen_cxx_proto_impl(FILE *out, struct protocol *p)
@@ -800,6 +828,7 @@ static int tp_gen_cxx_inc_file(struct generated_file *gfile, FILE *out)
     inc = inc_tab = NULL;
     // Generate include files
     fprintf(out, "\n#include <inttypes.h>\n");
+    fprintf(out, "\n#include <iostream>\n");
     // Other dynamic include
     inc_tab = tpp_get_inc_file(gfile);
     for (inc = inc_tab; inc != NULL; inc=inc->next){
@@ -811,6 +840,10 @@ static int tp_gen_cxx_inc_file(struct generated_file *gfile, FILE *out)
     }
 
     fprintf(out, "\n#include <tpb_command.h>\n");
+    if (g_reg_cmd) {
+        fprintf(out, "#include \"framework_command_manager.h\"\n");
+    }
+
     return 0;
 }
 
@@ -893,7 +926,7 @@ int tp_gen_cxx_code(const char *save_dir, const char *file)
 
         proto = tpp_protocol_tab_get(cur_gfile);
         if (g_gen_struct){
-            fprintf(hdrfile, "\n\n//----------------- The command definition bengin.-----------------------\n");
+			fprintf(hdrfile, "\n\n//----------------- The command definition bengin.-----------------------\n");
             for (cur_p = proto; cur_p != NULL; cur_p = cur_p->next){
                 tp_gen_cxx_protid(hdrfile, cur_p->head);
             }
@@ -906,16 +939,13 @@ int tp_gen_cxx_code(const char *save_dir, const char *file)
         if (pkgname){
             pkgname = strdup(pkgname);
             pkgname = tp_replace_x_with_y(pkgname, '.', '_');
-        }else{
-            pkgname = "tpp";
         }
-        fprintf(hdrfile, "namespace %s{\n", pkgname);
+        fprintf(hdrfile, "namespace %s{\n", pkgname?pkgname:"tpp");
 
         // Genereate the implementation
         fprintf(srcfile, "/// Generated by tpp compiler. Don't edit!\n");
         fprintf(srcfile, "#include <stdio.h>\n");
         fprintf(srcfile, "#include \"%s\"\n", hdrfilename);
-        fprintf(srcfile, "#include \"command_manager.h\"\n");
         fprintf(srcfile, "#include \"tpb_inputarchive.h\"\n");
         fprintf(srcfile, "#include \"tpb_outputarchive.h\"\n\n");
 
@@ -925,18 +955,29 @@ int tp_gen_cxx_code(const char *save_dir, const char *file)
             tp_gen_cxx_proto_impl(srcfile, cur_p);
         }
 
-        // Must at the  endline
-        fprintf(srcfile, "REGISTER_COMMAND_BEGIN();\n");
-        for (cur_p = proto; cur_p != NULL; cur_p = cur_p->next){
-            tp_gen_cxx_proto_impl_register_cmd(srcfile, cur_p);
+        int has_protid = 0;
+        if (proto) {
+            has_protid = tp_gen_cxx_proto_has_protid(proto);
         }
-        fprintf(srcfile, "REGISTER_COMMAND_END();\n");
+        if (g_reg_cmd && has_protid) {
+            char *ptr = strchr(cur_gfile->filename, '.');
+            char *protocol_name = strndup(cur_gfile->filename, ptr - cur_gfile->filename);
+
+            // Must at the  endline
+            fprintf(hdrfile, "REGISTER_COMMAND_BEGIN(%s);\n", protocol_name);
+            for (cur_p = proto; cur_p != NULL; cur_p = cur_p->next) {
+                tp_gen_cxx_proto_impl_register_cmd(hdrfile, cur_p);
+            }
+            fprintf(hdrfile, "REGISTER_COMMAND_END(%s);\n", protocol_name);
+
+            free(protocol_name);
+        }
 
         // namespace end for header file
         fprintf(hdrfile, "}\n");
 
         // over
-        fprintf(hdrfile, "#endif//_TPBUFF_%s_H_\nusing namespace %s;\n", upper_file, pkgname);
+        fprintf(hdrfile, "#endif//_TPBUFF_%s_H_\nusing namespace %s;\n", upper_file, pkgname?pkgname:"tpp");
 
         free(pkgname);
         free(upper_file);

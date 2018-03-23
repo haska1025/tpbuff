@@ -43,7 +43,7 @@ extern int tpplineno;
 %type <strval> pkg_name
 %type <strval> iddot_list 
 %type <strval> iddot
-
+%type <intval> vec_len_bytes
 
 %start stmt_list
 
@@ -104,42 +104,45 @@ col_definition: def_type ID ';'   { $$ = tpp_item_node_set_name($1 , $2);}
 ;
 
 def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
-| REPEAT BYTE                        {$$ = tpp_new_node(VALUE_TYPE_BYTE_VEC);}
+| REPEAT vec_len_bytes BYTE          {$$ = tpp_new_vec_node(VALUE_TYPE_BYTE_VEC, $2);}
 | BOOL                               {$$ = tpp_new_node(VALUE_TYPE_BOOL);}
-| REPEAT BOOL                        {$$ = tpp_new_node(VALUE_TYPE_BOOL_VEC);}
+| REPEAT vec_len_bytes BOOL          {$$ = tpp_new_vec_node(VALUE_TYPE_BOOL_VEC, $2);}
 | INTEGER8                           {$$ = tpp_new_node(VALUE_TYPE_INT8);}
-| REPEAT INTEGER8                    {$$ = tpp_new_node(VALUE_TYPE_INT8_VEC);}
+| REPEAT vec_len_bytes INTEGER8      {$$ = tpp_new_vec_node(VALUE_TYPE_INT8_VEC, $2);}
 | UINTEGER8                          {$$ = tpp_new_node(VALUE_TYPE_UINT8);}
-| REPEAT UINTEGER8                   {$$ = tpp_new_node(VALUE_TYPE_UINT8_VEC);}
+| REPEAT vec_len_bytes UINTEGER8     {$$ = tpp_new_vec_node(VALUE_TYPE_UINT8_VEC, $2);}
 | INTEGER16                          {$$ = tpp_new_node(VALUE_TYPE_INT16);}
-| REPEAT INTEGER16                   {$$ = tpp_new_node(VALUE_TYPE_INT16_VEC);}
+| REPEAT vec_len_bytes INTEGER16     {$$ = tpp_new_vec_node(VALUE_TYPE_INT16_VEC, $2);}
 | UINTEGER16                         {$$ = tpp_new_node(VALUE_TYPE_UINT16);}
-| REPEAT UINTEGER16                  {$$ = tpp_new_node(VALUE_TYPE_UINT16_VEC);}
+| REPEAT vec_len_bytes UINTEGER16    {$$ = tpp_new_vec_node(VALUE_TYPE_UINT16_VEC, $2);}
 | INTEGER32                          {$$ = tpp_new_node(VALUE_TYPE_INT32);}
-| REPEAT INTEGER32                   {$$ = tpp_new_node(VALUE_TYPE_INT32_VEC);}
+| REPEAT vec_len_bytes INTEGER32     {$$ = tpp_new_vec_node(VALUE_TYPE_INT32_VEC, $2);}
 | UINTEGER32                         {$$ = tpp_new_node(VALUE_TYPE_UINT32);}
-| REPEAT UINTEGER32                  {$$ = tpp_new_node(VALUE_TYPE_UINT32_VEC);}
+| REPEAT vec_len_bytes UINTEGER32    {$$ = tpp_new_vec_node(VALUE_TYPE_UINT32_VEC, $2);}
 | INTEGER64                          {$$ = tpp_new_node(VALUE_TYPE_INT64);}
-| REPEAT INTEGER64                   {$$ = tpp_new_node(VALUE_TYPE_INT64_VEC);}
+| REPEAT vec_len_bytes INTEGER64     {$$ = tpp_new_vec_node(VALUE_TYPE_INT64_VEC, $2);}
 | UINTEGER64                         {$$ = tpp_new_node(VALUE_TYPE_UINT64);}
-| REPEAT UINTEGER64                  {$$ = tpp_new_node(VALUE_TYPE_UINT64_VEC);}
+| REPEAT vec_len_bytes UINTEGER64    {$$ = tpp_new_vec_node(VALUE_TYPE_UINT64_VEC, $2);}
 | DOUBLE                             {$$ = tpp_new_node(VALUE_TYPE_DOUBLE);}
-| REPEAT DOUBLE                      {$$ = tpp_new_node(VALUE_TYPE_DOUBLE_VEC);}
+| REPEAT vec_len_bytes DOUBLE        {$$ = tpp_new_vec_node(VALUE_TYPE_DOUBLE_VEC, $2);}
 | FLOAT                              {$$ = tpp_new_node(VALUE_TYPE_FLOAT);}
-| REPEAT FLOAT                       {$$ = tpp_new_node(VALUE_TYPE_FLOAT_VEC);}
+| REPEAT vec_len_bytes FLOAT         {$$ = tpp_new_vec_node(VALUE_TYPE_FLOAT_VEC, $2);}
 | LONG                               {$$ = tpp_new_node(VALUE_TYPE_LONG);}
-| REPEAT LONG                        {$$ = tpp_new_node(VALUE_TYPE_LONG_VEC);}
+| REPEAT vec_len_bytes LONG          {$$ = tpp_new_vec_node(VALUE_TYPE_LONG_VEC, $2);}
 | INT                                {$$ = tpp_new_node(VALUE_TYPE_INT);}
-| REPEAT INT                         {$$ = tpp_new_node(VALUE_TYPE_INT_VEC);}
+| REPEAT vec_len_bytes INT           {$$ = tpp_new_vec_node(VALUE_TYPE_INT_VEC, $2);}
 | SHORT                              {$$ = tpp_new_node(VALUE_TYPE_SHORT);}
-| REPEAT SHORT                       {$$ = tpp_new_node(VALUE_TYPE_SHORT_VEC);}
+| REPEAT vec_len_bytes SHORT         {$$ = tpp_new_vec_node(VALUE_TYPE_SHORT_VEC, $2);}
 | CHAR                               {$$ = tpp_new_node(VALUE_TYPE_CHAR);}
-| REPEAT CHAR                        {$$ = tpp_new_node(VALUE_TYPE_CHAR_VEC);}
+| REPEAT vec_len_bytes CHAR          {$$ = tpp_new_vec_node(VALUE_TYPE_CHAR_VEC, $2);}
 | STRING                             {$$ = tpp_new_node(VALUE_TYPE_STR);}
-| REPEAT STRING                      {$$ = tpp_new_node(VALUE_TYPE_STR_VEC);}
+| REPEAT vec_len_bytes STRING        {$$ = tpp_new_vec_node(VALUE_TYPE_STR_VEC, $2);}
 | ID                                 {$$ = tpp_new_ref_node($1, VALUE_TYPE_REF); if (!$$) tpperror("The type %s doesn't declared", $1);}
-| REPEAT ID                          {$$ = tpp_new_ref_node($2, VALUE_TYPE_REF_VEC); if (!$$) tpperror("The type %s doesn't declared", $2);}
+| REPEAT vec_len_bytes ID            {$$ = tpp_new_ref_node($3, VALUE_TYPE_REF_VEC); if (!$$) tpperror("The type %s doesn't declared", $2);}
 ;
+
+vec_len_bytes: {$$ = 4;}
+| '(' NUM ')' {$$ = $2;}
 
 %%
 void

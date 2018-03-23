@@ -3,6 +3,7 @@
 #include "tp_symbol_list.h"
 
 int g_gen_struct = 0;
+int g_reg_cmd = 0;
 
 void printrefs();
 void test_tpp(const char *file_name)

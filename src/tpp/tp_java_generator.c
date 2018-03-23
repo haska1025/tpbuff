@@ -5,6 +5,33 @@
 #include "tp_java_generator.h"
 #include "tp_symbol_list.h"
 
+static const char *tp_gen_java_get_inttypestr_by_size(int size)
+{
+    if (size <= 1){
+        return "byte";
+    }else if (size <= 2){
+        return "short";
+    }else if (size <= 4){
+        return "int";
+    }else if (size <= 8){
+        return "long";
+    }
+    return "int";
+}
+static const char *tp_gen_java_get_intfunstr_by_size(int size)
+{
+    if (size <= 1){
+        return "Byte";
+    }else if (size <= 2){
+        return "Short";
+    }else if (size <= 4){
+        return "Int";
+    }else if (size <= 8){
+        return "Long";
+    }
+    return "Int";
+}
+
 #define tp_gen_java_proto_impl_dump_format(fmt) \
     do{\
         fprintf(out, "    System.out.printf(\"%s = %" fmt "\", %s).println();\n", in->name, in->name);\
@@ -202,6 +229,18 @@ static int tp_gen_java_getter_setter(FILE *out, struct item_node *n)
 
     return 0;
 }
+static int tp_gen_cxx_protid(FILE *out, struct item_node *n)
+{
+    struct item_node *in = n;
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_PROTID_INT){
+            fprintf(out, "  public static final int %s=%d;\n", in->name, in->value.int_val);
+        }else if (in->val_type == VALUE_TYPE_PROTID_HEX){
+            fprintf(out, "  public static final int %s=%s;\n", in->name, in->value.str_val);
+        }
+    }
+    return 0;
+}
 static int tp_gen_java_data_member(FILE *out, struct item_node *n)
 {
     struct item_node *in = n;
@@ -288,8 +327,8 @@ static int tp_gen_java_data_member(FILE *out, struct item_node *n)
 #define tp_gen_java_proto_impl_serialize_vec(type) \
     do{\
         fprintf(out, "\n    // Write size firstly\n");\
-        fprintf(out, "    int %s_size = %s.length;\n", in->name, in->name);\
-        fprintf(out, "    oa.writeInt(%s_size);\n", in->name);\
+        fprintf(out, "    %s %s_size = %s.length;\n", tp_gen_java_get_inttypestr_by_size(in->val_len),  in->name, in->name);\
+        fprintf(out, "    oa.write%s(%s_size);\n", tp_gen_java_get_intfunstr_by_size(in->val_len), in->name);\
         fprintf(out, "    // Write element iteratively\n");\
         fprintf(out, "    for(int i=0; i < %s_size; i++){\n", in->name);\
         fprintf(out, "      oa.write" #type "(%s[i]);\n", in->name);\
@@ -299,7 +338,7 @@ static int tp_gen_java_data_member(FILE *out, struct item_node *n)
 #define tp_gen_java_proto_impl_deserialize_vec(type, datatype) \
     do{\
         fprintf(out, "\n    // Read size firstly\n");\
-        fprintf(out, "    int %s_size = ia.readInt();\n", in->name);\
+        fprintf(out, "    %s %s_size = ia.read%s();\n", tp_gen_java_get_inttypestr_by_size(in->val_len), in->name, tp_gen_java_get_intfunstr_by_size(in->val_len));\
         fprintf(out, "    %s = new " #datatype "[%s_size];\n", in->name, in->name);\
         fprintf(out, "    // Read element iteratively\n");\
         fprintf(out, "    for(int i=0; i < %s_size; i++){\n", in->name);\
@@ -559,6 +598,7 @@ static int tp_gen_java_proto_decl(const char *save_dir, struct protocol *p, stru
 
     //Generate class header
     fprintf(javafile, "public class %s extends CommandHeader implements Command {\n", p->name);
+    tp_gen_cxx_protid(javafile, p->head);
     tp_gen_java_data_member(javafile, p->head);
     tp_gen_java_getter_setter(javafile, p->head);
     fprintf(javafile, "\n  // constructor\n");

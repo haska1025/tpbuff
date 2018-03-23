@@ -70,5 +70,10 @@ protocol CloseConf
 
     string str;
     repeat string rstr;
+
+    repeat(1) int one_bytes_vec;
+    repeat(2) int two_bytes_vec;
+    repeat(4) int four_bytes_vec;
+    repeat(8) int eigth_bytes_vec;
 };
 
