@@ -34,12 +34,18 @@ extern int tpplineno;
 %token PROTID
 %token IMPORT
 %token PACKAGE
+%token PREFIX
+%token KEY
+%token PRIMARY
+%token FOREIGN
+%token SET
 %token <intval> '{' '}' ';' '(' ')' '=' '.'
 
 %type <node_ptr> col_definition 
 %type <prtc_ptr> def_col_list
 %type <prtc_ptr> def_cmd_stmt
 %type <node_ptr> def_type
+%type <node_ptr> def_key_type
 %type <strval> pkg_name
 %type <strval> iddot_list 
 %type <strval> iddot
@@ -99,6 +105,7 @@ def_col_list:col_definition   { $$ = tpp_protocol_new($1);}
 ;
 
 col_definition: def_type ID ';'   { $$ = tpp_item_node_set_name($1 , $2);}
+| def_key_type ID ';'        { $$ = tpp_item_node_set_name($1, $2);}
 | PROTID ID '=' NUM ';'      { $$ = tpp_new_int_protid_node($2 , $4);}
 | PROTID ID '=' STRINGVAL ';'   { $$ = tpp_new_hex_protid_node($2 , $4);}
 ;
@@ -138,12 +145,21 @@ def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
 | STRING                             {$$ = tpp_new_node(VALUE_TYPE_STR);}
 | REPEAT vec_len_bytes STRING        {$$ = tpp_new_vec_node(VALUE_TYPE_STR_VEC, $2);}
 | ID                                 {$$ = tpp_new_ref_node($1, VALUE_TYPE_REF); if (!$$) tpperror("The type %s doesn't declared", $1);}
-| REPEAT vec_len_bytes ID            {$$ = tpp_new_ref_node($3, VALUE_TYPE_REF_VEC); if (!$$) tpperror("The type %s doesn't declared", $2);}
+| REPEAT vec_len_bytes ID            {$$ = tpp_new_ref_node($3, VALUE_TYPE_REF_VEC); if (!$$) tpperror("The type %s doesn't declared", $3);}
+| SET ID                             {$$ = tpp_new_ref_node($2, VALUE_TYPE_SET_REF); if (!$$) tpperror("The type %s doesn't declared", $2);}
 ;
 
 vec_len_bytes: {$$ = 4;}
 | '(' NUM ')' {$$ = $2;}
 
+def_key_type: PREFIX KEY STRING  { $$ = tpp_new_node(VALUE_TYPE_PREFIX_KEY_STR);}
+| PRIMARY KEY INT                { $$ = tpp_new_node(VALUE_TYPE_PRIMARY_KEY_INT);}
+| PRIMARY KEY STRING             { $$ = tpp_new_node(VALUE_TYPE_PRIMARY_KEY_STR);}
+| FOREIGN KEY INT                { $$ = tpp_new_node(VALUE_TYPE_FOREIGN_KEY_INT);}
+| FOREIGN KEY STRING             { $$ = tpp_new_node(VALUE_TYPE_FOREIGN_KEY_STR);}
+| SET KEY INT                    { $$ = tpp_new_node(VALUE_TYPE_SET_KEY_INT);}
+| SET KEY STRING                 { $$ = tpp_new_node(VALUE_TYPE_SET_KEY_STR);}
+| SET PREFIX KEY STRING          { $$ = tpp_new_node(VALUE_TYPE_SET_PREFIX_KEY_STR);}
 %%
 void
 tpperror(char *s, ...)

@@ -45,6 +45,10 @@
 "repeat"    {return REPEAT;}
 "import"    {return IMPORT;}
 "package"   {return PACKAGE;}
+"key"       {return KEY;}
+"primary"   {return PRIMARY;}
+"foreign"   {return FOREIGN;}
+"set"       {return SET;}
 
 "bool"     {tpplval.intval = 1;return BOOL;}
 "byte"     {tpplval.intval = 1;return BYTE;}
