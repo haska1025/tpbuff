@@ -49,6 +49,7 @@
 "primary"   {return PRIMARY;}
 "foreign"   {return FOREIGN;}
 "set"       {return SET;}
+"prefix"    {return PREFIX;}
 
 "bool"     {tpplval.intval = 1;return BOOL;}
 "byte"     {tpplval.intval = 1;return BYTE;}

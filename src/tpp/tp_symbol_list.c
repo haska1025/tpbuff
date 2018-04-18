@@ -199,10 +199,10 @@ struct item_node * tpp_new_ref_node(char *name, int val_type)
     return node;
 }
 
-struct item_node * tpp_new_int_protid_node(char *name, int val)
+struct item_node * tpp_new_int_node(int val_type, char *name, int val)
 {
     struct item_node *node = NULL;
-    node = tpp_new_node(VALUE_TYPE_PROTID_INT);
+    node = tpp_new_node(val_type);
     if (!node)return NULL;
     
     node->value.int_val = val;
@@ -210,10 +210,10 @@ struct item_node * tpp_new_int_protid_node(char *name, int val)
     return node;
 }
 
-struct item_node * tpp_new_hex_protid_node(char *name, char *val)
+struct item_node * tpp_new_str_node(int val_type, char *name, char *val)
 {
     struct item_node *node = NULL;
-    node = tpp_new_node(VALUE_TYPE_PROTID_HEX);
+    node = tpp_new_node(val_type);
     if (!node)return NULL;
 
     node->value.str_val = val;

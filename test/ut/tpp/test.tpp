@@ -11,6 +11,11 @@ import common1.tpp;
  */
 protocol Conf {
     protid ConfCMD=0XAfe8;
+    prefix key string conf_prefix='conf';
+    primary key int confid;
+    foreign key int fid1;
+    foreign key int fid2;
+
     common_message cm;
     common1_message cm1;
     int8 i8;
@@ -20,6 +25,9 @@ protocol CloseConf
 {
     protid CloseConfCMD=0x22;
     Conf cc_ref;
+
+    prefix key string closeconf_prefix='close_conf';
+    primary key int closeconfid;
 
     repeat Conf r_cc_ref;
 
@@ -75,5 +83,9 @@ protocol CloseConf
     repeat(2) int two_bytes_vec;
     repeat(4) int four_bytes_vec;
     repeat(8) int eigth_bytes_vec;
+
+    set Conf confs;
+    set prefix key string confs_rlt;
+    set key int confid;
 };
 

@@ -178,8 +178,8 @@ static char * tp_concat_path(const char *dir, const char *filename)
 extern struct item_node * tpp_new_node(int val_type);
 extern struct item_node * tpp_new_vec_node(int val_type, int veclenbytes);
 extern struct item_node * tpp_new_ref_node(char *name, int val_type);
-extern struct item_node * tpp_new_int_protid_node(char *name, int val);
-extern struct item_node * tpp_new_hex_protid_node(char *name, char *val);
+extern struct item_node * tpp_new_int_node(int val_type, char *name, int val);
+extern struct item_node * tpp_new_str_node(int val_type, char *name, char *val);
 
 extern struct item_node * tpp_item_node_set_name(struct item_node *node, char *name);
 extern struct protocol * tpp_item_list_add_node(struct protocol *p , struct item_node *node);

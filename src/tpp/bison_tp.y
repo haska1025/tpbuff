@@ -106,8 +106,9 @@ def_col_list:col_definition   { $$ = tpp_protocol_new($1);}
 
 col_definition: def_type ID ';'   { $$ = tpp_item_node_set_name($1 , $2);}
 | def_key_type ID ';'        { $$ = tpp_item_node_set_name($1, $2);}
-| PROTID ID '=' NUM ';'      { $$ = tpp_new_int_protid_node($2 , $4);}
-| PROTID ID '=' STRINGVAL ';'   { $$ = tpp_new_hex_protid_node($2 , $4);}
+| PROTID ID '=' NUM ';'      { $$ = tpp_new_int_node(VALUE_TYPE_PROTID_INT, $2 , $4);}
+| PROTID ID '=' STRINGVAL ';'   { $$ = tpp_new_str_node(VALUE_TYPE_PROTID_INT, $2 , $4);}
+| PREFIX KEY STRING ID '=' STRINGVAL ';'  { $$ = tpp_new_str_node(VALUE_TYPE_PREFIX_KEY_STR, $4, $6);}
 ;
 
 def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
@@ -152,8 +153,7 @@ def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
 vec_len_bytes: {$$ = 4;}
 | '(' NUM ')' {$$ = $2;}
 
-def_key_type: PREFIX KEY STRING  { $$ = tpp_new_node(VALUE_TYPE_PREFIX_KEY_STR);}
-| PRIMARY KEY INT                { $$ = tpp_new_node(VALUE_TYPE_PRIMARY_KEY_INT);}
+def_key_type: PRIMARY KEY INT    { $$ = tpp_new_node(VALUE_TYPE_PRIMARY_KEY_INT);}
 | PRIMARY KEY STRING             { $$ = tpp_new_node(VALUE_TYPE_PRIMARY_KEY_STR);}
 | FOREIGN KEY INT                { $$ = tpp_new_node(VALUE_TYPE_FOREIGN_KEY_INT);}
 | FOREIGN KEY STRING             { $$ = tpp_new_node(VALUE_TYPE_FOREIGN_KEY_STR);}
