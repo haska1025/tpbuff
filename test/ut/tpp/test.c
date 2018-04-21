@@ -4,6 +4,7 @@
 
 int g_gen_struct = 0;
 int g_reg_cmd = 0;
+int g_gen_redis = 0;
 
 void printrefs();
 void test_tpp(const char *file_name)
@@ -40,8 +41,11 @@ void test_tpp(const char *file_name)
 int main()
 {
     //test_tpp("common.tpp");
-    test_tpp("test.tpp");
+    //test_tpp("test.tpp");
     //test_tpp("test_multi.tpp");
+    g_gen_redis = 1;
+    test_tpp("okvm.tpp");
+    g_gen_redis = 0;
     return 0;
 }
 

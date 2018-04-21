@@ -9,6 +9,7 @@
 
 extern int g_gen_struct;
 extern int g_reg_cmd;
+extern int g_gen_redis;
 
 static const char *tp_gen_cxx_get_inttypestr_by_size(int size)
 {
@@ -847,6 +848,548 @@ static int tp_gen_cxx_inc_file(struct generated_file *gfile, FILE *out)
     return 0;
 }
 
+/*********************** The functions for redis begin **********************************/
+static int tp_gen_cxx_proto_impl_redis_key(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_PREFIX_KEY_STR){
+            fprintf(out, "  os << %s;\n", in->name);
+        }
+    }
+
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_FOREIGN_KEY_INT
+                || in->val_type == VALUE_TYPE_FOREIGN_KEY_STR){
+            fprintf(out, "  os << \":\";\n");
+            fprintf(out, "  os << %s;\n", in->name);
+        }
+    }
+
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_PRIMARY_KEY_STR
+                || in->val_type == VALUE_TYPE_PRIMARY_KEY_INT){
+            fprintf(out, "  os << \":\";\n");
+            fprintf(out, "  os << %s;\n", in->name);
+        }
+    }
+
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_streaming_vec(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> void StreamingVector(std::ostream &os, std::vector<T> &vec, const std::string &column_name)\n  {\n");
+    //fprintf(out, "  os << \"sadd \";\n");
+    tp_gen_cxx_proto_impl_redis_key(out, p);
+    fprintf(out, "    os << \":\" << column_name;\n");
+    fprintf(out, "\n  // Get size firstly\n");
+    fprintf(out, "    int vecsize = vec.size();\n");
+    fprintf(out, "    // Add element iteratively\n");
+    fprintf(out, "    for(int i=0; i < vecsize; i++){\n");
+    fprintf(out, "      os << \" \" << vec[i];\n");
+    fprintf(out, "    }\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_vectoring_stream(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> void VectoringStream(void *reply, std::vector<T> &vec)\n  {\n");
+    fprintf(out, "    int length = redis_okvm_reply_length(reply);\n");
+    fprintf(out, "    for (int i = 0; i < length; i++){\n");
+    fprintf(out, "      std::istringstream is(std::string(redis_okvm_reply_idxof_str(reply, i)));\n");
+    fprintf(out, "      is >> vec[i];\n");
+    fprintf(out, "    }\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_bulk_read(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  void BulkReadVec(const std::string &key)\n  {\n");
+    fprintf(out, "    std::ostringstream os;\n");
+    fprintf(out, "    os << \"smembers \";\n");
+    tp_gen_cxx_proto_impl_redis_key(out, p);
+    fprintf(out, "    os << \":\" << key;\n");
+    fprintf(out, "    redis_okvm_bulk_read(os.str().c_str());\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_bulk_write(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> void BulkWriteVec(void *ctx, std::vector<T> &vec, const std::string &key)\n  {\n");
+    fprintf(out, "    std::ostringstream os;\n");
+    fprintf(out, "    os << \"sadd \";\n");
+    fprintf(out, "    StreamingVector(os, vec, key);\n");
+    fprintf(out, "    redis_okvm_bulk_write(ctx, os.str().c_str());\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_set(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> void Set(const std::string &key, t &v)\n  {\n");
+    fprintf(out, "    std::ostringstream os;\n");
+    fprintf(out, "    os << \"hset \";\n");
+    tp_gen_cxx_proto_impl_redis_key(out, p);
+    fprintf(out, "    os << \" \" << key << \" \" << v;\n");
+    fprintf(out, "    return redis_okvm_write(os.str().c_str());");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_get(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> T Get(const std::string &key)\n  {\n");
+    fprintf(out, "    std::ostringstream os;\n");
+    fprintf(out, "    os << \"hget \";\n");
+    tp_gen_cxx_proto_impl_redis_key(out, p);
+    fprintf(out, "    os << \" \" << key;\n");
+    fprintf(out, "    void *reply = redis_okvm_read(os.str().c_str());\n");
+    fprintf(out, "    std::istringstream is(std::string(redis_okvm_reply_str(reply)));\n");
+    fprintf(out, "    T v;\n");
+    fprintf(out, "    is >> v;\n");
+    fprintf(out, "    redis_okvm_reply_free(reply);\n");
+    fprintf(out, "    return v;\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_add_vec(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> void AddVec(const std::string &key, std::vector<T> &vec)\n  {\n");
+    fprintf(out, "    std::ostringstream os;\n");
+    fprintf(out, "    os << \"sadd \";\n");
+    fprintf(out, "    StreamingVector(os, vec, key);\n");
+    fprintf(out, "    redis_okvm_write(os.str().c_str());\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_rem_vec(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> void RemVec(const std::string &key, std::vector<T> &vec)\n  {\n");
+    fprintf(out, "    std::ostringstream os;\n");
+    fprintf(out, "    os << \"srem \";\n");
+    fprintf(out, "    StreamingVector(os, vec, key);\n");
+    fprintf(out, "    redis_okvm_write(os.str().c_str());\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis_get_vec(FILE *out, struct protocol *p)
+{
+    fprintf(out, "  template<class T> void GetVec(const std::string &key, std::vector<T> &vec)\n  {\n");
+    fprintf(out, "    std::ostringstream os;\n");
+    fprintf(out, "    os << \"smembers \";\n");
+    tp_gen_cxx_proto_impl_redis_key(out, p);
+    fprintf(out, "    os << \" \" << key;\n");
+    fprintf(out, "    void *reply = redis_okvm_read(os.str().c_str());\n");
+    fprintf(out, "    VectoringStream(reply, vec);\n");
+    fprintf(out, "    redis_okvm_reply_free(reply);\n");
+    fprintf(out, "  }\n");
+    return 0;
+}
+
+#define tp_gen_cxx_decl_redis_getter_setter_type(type) \
+    do {\
+        fprintf(out, "  void redis_set_%s(" #type " d, bool to_redis=false)\n  {\n", in->name);\
+        fprintf(out, "    %s = d;\n", in->name);\
+        fprintf(out, "    if (to_redis){\n");\
+        fprintf(out, "      Set(\"%s\", %s);\n",in->name,in->name);\
+        fprintf(out, "    }\n");\
+        fprintf(out, "  }\n");\
+        fprintf(out, "  " #type " redis_get_%s(bool from_redis=false)\n  {\n", in->name);\
+        fprintf(out, "    if (from_redis){\n");\
+        fprintf(out, "      %s = Get(\"%s\");\n", in->name, in->name);\
+        fprintf(out, "    }\n");\
+        fprintf(out, "    return %s;\n", in->name);\
+        fprintf(out, "  }\n");\
+    }while(0);
+
+#define tp_gen_cxx_decl_redis_getter_setter_type_vec(type) \
+    do {\
+        fprintf(out, "  void redis_add_%s(std::vector<" #type "> &vec, bool to_redis=false)\n  {\n", in->name);\
+        fprintf(out, "    %s = vec;\n", in->name);\
+        fprintf(out, "    if (to_redis){\n");\
+        fprintf(out, "      AddVec(\"%s\", %s);\n",in->name,in->name);\
+        fprintf(out, "    }\n");\
+        fprintf(out, "  }\n");\
+        fprintf(out, "  void redis_rem_%s(std::vector<" #type "> &vec, bool to_redis=false)\n  {\n", in->name);\
+        fprintf(out, "    if (to_redis){\n");\
+        fprintf(out, "      RemVec(\"%s\", vec);\n",in->name);\
+        fprintf(out, "    }\n");\
+        fprintf(out, "  }\n");\
+        fprintf(out, "  " #type " redis_get_%s()\n  {\n", in->name);\
+        fprintf(out, "    if (from_redis){\n");\
+        fprintf(out, "      GetVec(\"%s\", %s);\n", in->name, in->name);\
+        fprintf(out, "    }\n");\
+        fprintf(out, "    return %s;\n", in->name);\
+        fprintf(out, "  }\n");\
+    }while(0);
+
+static int tp_gen_cxx_proto_decl_redis_getter_setter(FILE *out, struct protocol *p)
+{
+    struct item_node *in = p->head;
+
+    fprintf(out, "\n  // getter/setter\n");
+    for (; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_BYTE || in->val_type == VALUE_TYPE_UINT8){
+            tp_gen_cxx_decl_redis_getter_setter_type(uint8_t);
+        }else if (in->val_type == VALUE_TYPE_BYTE_VEC ||in->val_type == VALUE_TYPE_UINT8_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(uint8_t);
+        }else if (in->val_type == VALUE_TYPE_INT8){
+            tp_gen_cxx_decl_redis_getter_setter_type(int8_t);
+        }else if (in->val_type == VALUE_TYPE_INT8_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(int8_t);
+        }else if (in->val_type == VALUE_TYPE_INT16){
+            tp_gen_cxx_decl_redis_getter_setter_type(int16_t);
+        }else if (in->val_type == VALUE_TYPE_INT16_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(int16_t);
+        }else if (in->val_type == VALUE_TYPE_UINT16){
+            tp_gen_cxx_decl_redis_getter_setter_type(uint16_t);
+        }else if (in->val_type == VALUE_TYPE_UINT16_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(uint16_t);
+        }else if (in->val_type == VALUE_TYPE_INT32){
+            tp_gen_cxx_decl_redis_getter_setter_type(int32_t);
+        }else if (in->val_type == VALUE_TYPE_INT32_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(int32_t);
+        }else if (in->val_type == VALUE_TYPE_UINT32){
+            tp_gen_cxx_decl_redis_getter_setter_type(uint32_t);
+        }else if (in->val_type == VALUE_TYPE_UINT32_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(uint32_t);
+        }else if (in->val_type == VALUE_TYPE_INT64){
+            tp_gen_cxx_decl_redis_getter_setter_type(int64_t);
+        }else if (in->val_type == VALUE_TYPE_INT64_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(int64_t);
+        }else if (in->val_type == VALUE_TYPE_UINT64){
+            tp_gen_cxx_decl_redis_getter_setter_type(uint64_t);
+        }else if (in->val_type == VALUE_TYPE_UINT64_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(uint64_t);
+        }else if (in->val_type == VALUE_TYPE_INT
+                || in->val_type == VALUE_TYPE_PRIMARY_KEY_INT
+                || in->val_type == VALUE_TYPE_FOREIGN_KEY_INT){
+            tp_gen_cxx_decl_redis_getter_setter_type(int);
+        }else if (in->val_type == VALUE_TYPE_INT_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(int);
+        }else if (in->val_type == VALUE_TYPE_LONG){
+            tp_gen_cxx_decl_redis_getter_setter_type(long);
+        }else if (in->val_type == VALUE_TYPE_LONG_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(long);
+        }else if (in->val_type == VALUE_TYPE_SHORT){
+            tp_gen_cxx_decl_redis_getter_setter_type(short);
+        }else if (in->val_type == VALUE_TYPE_SHORT_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(short);
+        }else if (in->val_type == VALUE_TYPE_CHAR){
+            tp_gen_cxx_decl_redis_getter_setter_type(char);
+        }else if (in->val_type == VALUE_TYPE_CHAR_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(char);
+        }else if (in->val_type == VALUE_TYPE_DOUBLE){
+            tp_gen_cxx_decl_redis_getter_setter_type(double);
+        }else if (in->val_type == VALUE_TYPE_DOUBLE_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(double);
+        }else if (in->val_type == VALUE_TYPE_FLOAT){
+            tp_gen_cxx_decl_redis_getter_setter_type(float);
+        }else if (in->val_type == VALUE_TYPE_FLOAT_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(float);
+        }else if (in->val_type == VALUE_TYPE_STR
+                || in->val_type == VALUE_TYPE_PRIMARY_KEY_STR
+                || in->val_type == VALUE_TYPE_FOREIGN_KEY_STR){
+            tp_gen_cxx_decl_redis_getter_setter_type(std::string);
+        }else if (in->val_type == VALUE_TYPE_STR_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(std::string);
+        }else if (in->val_type == VALUE_TYPE_BOOL){
+            tp_gen_cxx_decl_redis_getter_setter_type(bool);
+        }else if (in->val_type == VALUE_TYPE_BOOL_VEC){
+            tp_gen_cxx_decl_redis_getter_setter_type_vec(bool);
+        }else if (in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  void redis_set_%s(%s d, bool to_redis=false)\n  {\n", in->name, in->ref_type);
+            fprintf(out, "    %s = d;\n", in->name);
+            fprintf(out, "    if (to_redis){\n");
+            fprintf(out, "      Set(\"%s\", %s);\n",in->name,in->name);
+            fprintf(out, "    }\n");
+            fprintf(out, "  }\n");
+            fprintf(out, "  %s redis_get_%s(bool from_redis=false)\n  {\n", in->ref_type, in->name);
+            fprintf(out, "    if (from_redis){\n");
+            fprintf(out, "      %s = Get(\"%s\");\n", in->name, in->name);
+            fprintf(out, "    }\n");
+            fprintf(out, "    return %s;\n", in->name);
+            fprintf(out, "  }\n");
+        }else if (in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "  void redis_add_%s(std::vector<%s> &vec, bool to_redis=false)\n  {\n", in->name, in->ref_type);
+            fprintf(out, "    %s = vec;\n", in->name);
+            fprintf(out, "    if (to_redis){\n");
+            fprintf(out, "      AddVec(\"%s\", %s);\n",in->name,in->name);
+            fprintf(out, "    }\n");
+            fprintf(out, "  }\n");
+            fprintf(out, "  void redis_rem_%s(std::vector<%s> &vec, bool to_redis=false)\n  {\n", in->name, in->ref_type);
+            fprintf(out, "    if (to_redis){\n");
+            fprintf(out, "      RemVec(\"%s\", vec);\n",in->name);
+            fprintf(out, "    }\n");
+            fprintf(out, "  }\n");
+            fprintf(out, "  %s redis_get_%s()\n  {\n", in->ref_type, in->name);
+            fprintf(out, "    if (from_redis){\n");
+            fprintf(out, "      GetVec(\"%s\", %s);\n", in->name, in->name);
+            fprintf(out, "    }\n");
+            fprintf(out, "    return %s;\n", in->name);
+            fprintf(out, "  }\n");
+        }
+    }
+
+    return 0;
+}
+
+static int tp_gen_cxx_proto_impl_redis_store(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+
+    fprintf(out, "int %s::Store()\n{\n", p->name);
+    fprintf(out, "  std::ostringstream os;\n");
+    fprintf(out, "  void *ctx = NULL;\n");
+    fprintf(out, "\n");
+
+    fprintf(out, "  ctx = redis_okvm_bulk_write_begin();\n");
+    fprintf(out, "  if (!ctx) return -1;\n\n"); 
+    fprintf(out, "  os << \"hmset \";\n");
+
+    tp_gen_cxx_proto_impl_redis_key(out, p);
+
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_BYTE
+                || in->val_type == VALUE_TYPE_INT8
+                || in->val_type == VALUE_TYPE_UINT8
+                || in->val_type == VALUE_TYPE_INT16
+                || in->val_type == VALUE_TYPE_UINT16
+                || in->val_type == VALUE_TYPE_INT32
+                || in->val_type == VALUE_TYPE_UINT32
+                || in->val_type == VALUE_TYPE_INT64
+                || in->val_type == VALUE_TYPE_UINT64
+                || in->val_type == VALUE_TYPE_INT
+                || in->val_type == VALUE_TYPE_SHORT
+                || in->val_type == VALUE_TYPE_LONG
+                || in->val_type == VALUE_TYPE_CHAR
+                || in->val_type == VALUE_TYPE_DOUBLE
+                || in->val_type == VALUE_TYPE_FLOAT
+                || in->val_type == VALUE_TYPE_STR
+                || in->val_type == VALUE_TYPE_BOOL
+                || in->val_type == VALUE_TYPE_REF){
+            fprintf(out, "  os << \" %s \" << %s;\n", in->name, in->name);
+        }
+    }
+    
+    fprintf(out, "  // Store the member\n");
+    fprintf(out, "  redis_okvm_bulk_write(ctx, os.str().c_str());\n");
+
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_BYTE_VEC
+                || in->val_type == VALUE_TYPE_INT8_VEC
+                || in->val_type == VALUE_TYPE_UINT8_VEC
+                || in->val_type == VALUE_TYPE_INT16_VEC
+                || in->val_type == VALUE_TYPE_UINT16_VEC
+                || in->val_type == VALUE_TYPE_INT32_VEC
+                || in->val_type == VALUE_TYPE_UINT32_VEC
+                || in->val_type == VALUE_TYPE_INT64_VEC
+                || in->val_type == VALUE_TYPE_UINT64_VEC
+                || in->val_type == VALUE_TYPE_INT_VEC 
+                || in->val_type == VALUE_TYPE_SHORT_VEC
+                || in->val_type == VALUE_TYPE_LONG_VEC
+                || in->val_type == VALUE_TYPE_DOUBLE_VEC
+                || in->val_type == VALUE_TYPE_FLOAT_VEC
+                || in->val_type == VALUE_TYPE_BOOL_VEC
+                || in->val_type == VALUE_TYPE_CHAR_VEC
+                || in->val_type == VALUE_TYPE_STR_VEC
+                || in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "  // Bulk write the vector to redis set\n");
+            fprintf(out, "  BulkWriteVec(ctx, %s, \"%s\");\n", in->name, in->name);
+        }
+    }
+
+    fprintf(out, "  redis_okvm_bulk_write_end(ctx);\n");
+    fprintf(out, "}\n");
+    return 0;
+}
+static int tp_gen_cxx_proto_impl_redis_restore(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+    int is_first_field = 1;
+
+    fprintf(out, "int %s::Restore()\n{\n", p->name);
+    fprintf(out, "  // Restore the member\n");
+    fprintf(out, "  std::ostringstream os;\n");
+    fprintf(out, "  void *ctx = NULL;\n");
+    fprintf(out, "  void *reply = NULL;\n");
+    fprintf(out, "  int length = 0;\n");
+    fprintf(out, "  char *field = NULL;\n");
+    fprintf(out, "\n");
+
+    fprintf(out, "  ctx = redis_okvm_bulk_read_begin();\n");
+    fprintf(out, "  if (!ctx) return -1;\n\n"); 
+    fprintf(out, "  os << \"hgetall \";\n");
+    tp_gen_cxx_proto_impl_redis_key(out, p);
+    fprintf(out, " redis_okvm_bulk_read(os.str().c_str());\n");
+
+    // The data memeber for vector get from redis set
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_BYTE_VEC
+                || in->val_type == VALUE_TYPE_INT8_VEC
+                || in->val_type == VALUE_TYPE_UINT8_VEC
+                || in->val_type == VALUE_TYPE_INT16_VEC
+                || in->val_type == VALUE_TYPE_UINT16_VEC
+                || in->val_type == VALUE_TYPE_INT32_VEC
+                || in->val_type == VALUE_TYPE_UINT32_VEC
+                || in->val_type == VALUE_TYPE_INT64_VEC
+                || in->val_type == VALUE_TYPE_UINT64_VEC
+                || in->val_type == VALUE_TYPE_INT_VEC 
+                || in->val_type == VALUE_TYPE_SHORT_VEC
+                || in->val_type == VALUE_TYPE_LONG_VEC
+                || in->val_type == VALUE_TYPE_DOUBLE_VEC
+                || in->val_type == VALUE_TYPE_FLOAT_VEC
+                || in->val_type == VALUE_TYPE_BOOL_VEC
+                || in->val_type == VALUE_TYPE_CHAR_VEC
+                || in->val_type == VALUE_TYPE_STR_VEC
+                || in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "  // Get the data from redis set for vector type data memeber.\n");
+            fprintf(out, "  BulkReadVec(\"%s\");\n", in->name);
+        }
+    }
+
+    fprintf(out, "  reply = redis_okvm_bulk_read_reply(ctx);\n");
+    fprintf(out, "  length = redis_okvm_reply_length(reply);\n");
+    fprintf(out, "  for (int i = 0; i < length;){\n");
+    fprintf(out, "    field = redis_okvm_reply_idxof_str(reply, i++);\n"); 
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_BYTE
+                || in->val_type == VALUE_TYPE_INT8
+                || in->val_type == VALUE_TYPE_UINT8
+                || in->val_type == VALUE_TYPE_INT16
+                || in->val_type == VALUE_TYPE_UINT16
+                || in->val_type == VALUE_TYPE_INT32
+                || in->val_type == VALUE_TYPE_UINT32
+                || in->val_type == VALUE_TYPE_INT64
+                || in->val_type == VALUE_TYPE_UINT64
+                || in->val_type == VALUE_TYPE_INT
+                || in->val_type == VALUE_TYPE_SHORT
+                || in->val_type == VALUE_TYPE_LONG
+                || in->val_type == VALUE_TYPE_CHAR
+                || in->val_type == VALUE_TYPE_DOUBLE
+                || in->val_type == VALUE_TYPE_FLOAT
+                || in->val_type == VALUE_TYPE_STR
+                || in->val_type == VALUE_TYPE_BOOL
+                || in->val_type == VALUE_TYPE_REF){
+            if (is_first_field){
+                fprintf(out, "    if (strcmp(field, \"%s\") == 0){\n", in->name);
+                is_first_field = 0;
+            }else{
+                fprintf(out, "    }else if (strcmp(field, \"%s\") == 0){\n", in->name);
+            }
+            fprintf(out, "      std::istringstream is(std::string(redis_okvm_reply_idxof_str(reply, i++)));\n");
+            fprintf(out, "      is >> %s\n", in->name);
+        }
+    }
+    fprintf(out, "    }else{\n");
+    fprintf(out, "      i++;\n");
+    fprintf(out, "    }\n");
+    fprintf(out, "  }\n");
+    fprintf(out, "  redis_okvm_reply_free(reply);\n");
+
+    for (in = p->head; in != NULL; in=in->next){
+        if (in->val_type == VALUE_TYPE_BYTE_VEC
+                || in->val_type == VALUE_TYPE_INT8_VEC
+                || in->val_type == VALUE_TYPE_UINT8_VEC
+                || in->val_type == VALUE_TYPE_INT16_VEC
+                || in->val_type == VALUE_TYPE_UINT16_VEC
+                || in->val_type == VALUE_TYPE_INT32_VEC
+                || in->val_type == VALUE_TYPE_UINT32_VEC
+                || in->val_type == VALUE_TYPE_INT64_VEC
+                || in->val_type == VALUE_TYPE_UINT64_VEC
+                || in->val_type == VALUE_TYPE_INT_VEC 
+                || in->val_type == VALUE_TYPE_SHORT_VEC
+                || in->val_type == VALUE_TYPE_LONG_VEC
+                || in->val_type == VALUE_TYPE_DOUBLE_VEC
+                || in->val_type == VALUE_TYPE_FLOAT_VEC
+                || in->val_type == VALUE_TYPE_BOOL_VEC
+                || in->val_type == VALUE_TYPE_CHAR_VEC
+                || in->val_type == VALUE_TYPE_STR_VEC
+                || in->val_type == VALUE_TYPE_REF_VEC){
+            fprintf(out, "  // Convert the stream to vector\n");
+            fprintf(out, "  reply = redis_okvm_bulk_read_reply(ctx);\n");
+            fprintf(out, "  VectoringStream(reply, %s);\n", in->name);
+            fprintf(out, "  redis_okvm_reply_free(reply);\n");
+        }
+    }
+    fprintf(out, "  return 0;\n");
+    fprintf(out, "}\n");
+
+    return 0;
+}
+
+static int tp_gen_cxx_proto_decl_redis(FILE *out, struct protocol *p)
+{
+    //Generate class header
+    fprintf(out, "class %s {\npublic:\n ", p->name);
+
+    fprintf(out, "  // constructor\n");
+    fprintf(out, "  %s();\n", p->name);
+    fprintf(out, "  // copy constructor\n");
+    fprintf(out, "  %s(const %s &tpp_from);\n", p->name, p->name);
+    fprintf(out, "  // assignment operator\n");
+    fprintf(out, "  %s &operator=(const %s &tpp_from);\n", p->name, p->name);
+    fprintf(out, "  // destructor\n");
+    fprintf(out, "  ~%s();\n", p->name);
+    fprintf(out, "  // Copy function\n");
+    fprintf(out, "  void CopyFrom(const %s &tpp_from);\n", p->name);
+    fprintf(out, "  // Restore data from redis.\n");
+    fprintf(out, "  int Restore();\n");
+    fprintf(out, "  // Store data to redis\n");
+    fprintf(out, "  int Store();\n");
+    fprintf(out, "  void dump(std::ostream &os);\n");
+
+    fprintf(out, "\n//The redis aux functions.\n");
+
+    tp_gen_cxx_proto_decl_redis_streaming_vec(out, p);
+    tp_gen_cxx_proto_decl_redis_vectoring_stream(out, p);
+    tp_gen_cxx_proto_decl_redis_bulk_read(out, p);
+    tp_gen_cxx_proto_decl_redis_bulk_write(out, p);
+    tp_gen_cxx_proto_decl_redis_set(out, p);
+    tp_gen_cxx_proto_decl_redis_get(out, p);
+    tp_gen_cxx_proto_decl_redis_add_vec(out, p);
+    tp_gen_cxx_proto_decl_redis_rem_vec(out, p);
+    tp_gen_cxx_proto_decl_redis_get_vec(out, p);
+    tp_gen_cxx_proto_decl_redis_getter_setter(out, p);
+
+    fprintf(out, "private:\n");
+    fprintf(out, "  void SharedCtor();\n");
+    fprintf(out, "  void SharedDtor();\n");
+    fprintf(out, "\nprivate:\n");
+
+    tp_gen_cxx_data_member(out, p->head);
+    fprintf(out, "};\n\n");
+
+    return 0;
+}
+
+static int tp_gen_cxx_proto_impl_redis(FILE *out, struct protocol *p)
+{
+    struct item_node *in = NULL;
+    // Generate constructor
+    tp_gen_cxx_proto_impl_ctor(out, p);
+    // Generate destructor
+    tp_gen_cxx_proto_impl_dtor(out, p);
+
+    // Generate store for redis 
+    tp_gen_cxx_proto_impl_redis_store(out, p);
+    // Generate restore for redis 
+    tp_gen_cxx_proto_impl_redis_restore(out, p);
+
+    tp_gen_cxx_proto_impl_dump(out, p);
+
+    return 0;
+}
+/*********************** The functions for redis end **********************************/
+
 int tp_gen_cxx_code(const char *save_dir, const char *file)
 {
     // Openfile
@@ -934,7 +1477,6 @@ int tp_gen_cxx_code(const char *save_dir, const char *file)
         }
 
         // Namespace for header file
-
         char *pkgname = tpp_get_package_name(cur_gfile);
         if (pkgname){
             pkgname = strdup(pkgname);
@@ -951,8 +1493,13 @@ int tp_gen_cxx_code(const char *save_dir, const char *file)
 
         // Generate Protocol
         for (cur_p = proto; cur_p != NULL; cur_p = cur_p->next){
-            tp_gen_cxx_proto_decl(hdrfile, cur_p);
-            tp_gen_cxx_proto_impl(srcfile, cur_p);
+            if (g_gen_redis){
+                tp_gen_cxx_proto_decl_redis(hdrfile, cur_p);
+                tp_gen_cxx_proto_impl_redis(srcfile, cur_p);
+            }else{
+                tp_gen_cxx_proto_decl(hdrfile, cur_p);
+                tp_gen_cxx_proto_impl(srcfile, cur_p);
+            }
         }
 
         int has_protid = 0;

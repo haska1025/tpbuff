@@ -192,6 +192,7 @@ extern int tpp_protocol_parse(const char *file_name);
 extern struct protocol * tpp_protocol_get(const char *protoname);
 extern void tpp_protocol_tab_add(struct protocol *p);
 
+extern char *tpp_protocol_get_key_name(const char *prot_name);
 extern struct protocol * tpp_protocol_tab_get(struct generated_file *gfile);
 extern void tpp_display_protocol_table(struct generated_file *gfile);
 extern void tpp_protocol_tab_destroy(struct generated_file *gfile);
