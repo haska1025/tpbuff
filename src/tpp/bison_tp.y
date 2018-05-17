@@ -38,7 +38,6 @@ extern int tpplineno;
 %token KEY
 %token PRIMARY
 %token FOREIGN
-%token SET
 %token <intval> '{' '}' ';' '(' ')' '=' '.'
 
 %type <node_ptr> col_definition 
@@ -147,7 +146,6 @@ def_type: BYTE                       {$$ = tpp_new_node(VALUE_TYPE_BYTE);}
 | REPEAT vec_len_bytes STRING        {$$ = tpp_new_vec_node(VALUE_TYPE_STR_VEC, $2);}
 | ID                                 {$$ = tpp_new_ref_node($1, VALUE_TYPE_REF); if (!$$) tpperror("The type %s doesn't declared", $1);}
 | REPEAT vec_len_bytes ID            {$$ = tpp_new_ref_node($3, VALUE_TYPE_REF_VEC); if (!$$) tpperror("The type %s doesn't declared", $3);}
-| SET ID                             {$$ = tpp_new_ref_node($2, VALUE_TYPE_SET_REF); if (!$$) tpperror("The type %s doesn't declared", $2);}
 ;
 
 vec_len_bytes: {$$ = 4;}
@@ -157,9 +155,6 @@ def_key_type: PRIMARY KEY INT    { $$ = tpp_new_node(VALUE_TYPE_PRIMARY_KEY_INT)
 | PRIMARY KEY STRING             { $$ = tpp_new_node(VALUE_TYPE_PRIMARY_KEY_STR);}
 | FOREIGN KEY INT                { $$ = tpp_new_node(VALUE_TYPE_FOREIGN_KEY_INT);}
 | FOREIGN KEY STRING             { $$ = tpp_new_node(VALUE_TYPE_FOREIGN_KEY_STR);}
-| SET KEY INT                    { $$ = tpp_new_node(VALUE_TYPE_SET_KEY_INT);}
-| SET KEY STRING                 { $$ = tpp_new_node(VALUE_TYPE_SET_KEY_STR);}
-| SET PREFIX KEY STRING          { $$ = tpp_new_node(VALUE_TYPE_SET_PREFIX_KEY_STR);}
 %%
 void
 tpperror(char *s, ...)
